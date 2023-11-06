@@ -90,20 +90,15 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
         return JsonResponse(data)
 
     def setup_urls(self):
-        from . import api
-        loan_session_api_urls = [
-            path(r'<int:pk>/', include([
-                re_path(r'^.*$', api.LoanSessionDetail.as_view(), name='api-part-detail')
-            ])),
-            re_path(r'^.*$', api.LoanSessionList.as_view(), name='api-loan-session-list'),
-        ]
+        from .urls import api_patterns
+        from .views import LoanItemDetail
 
         return [
             re_path(r'^hi/', self.view_test, name='hi'),
             re_path(r'^add/', self.add_loan, name='add'),
             re_path(r'^get/', self.get_loan, name='get'),
-            re_path(r'^api/', include(loan_session_api_urls), name="api"),
-            # re_path(r'^test/', api.LoanSessionList.as_view(), name='api-loan-session-list')
+            re_path(r'^test/', LoanItemDetail.as_view(), name='test'),
+            re_path(r'^api/', include(api_patterns), name="api"),
         ]
 
     SETTINGS = {

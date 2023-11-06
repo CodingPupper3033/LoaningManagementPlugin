@@ -1,0 +1,17 @@
+{% extends "stock/stock_app_base.html" %}
+{% load static %}
+{% load inventree_extras %}
+{% load plugin_extras %}
+{% load i18n %}
+
+{% block sidebar %}
+{% include "stock/location_sidebar.html" %}
+{% endblock sidebar %}
+
+{% block js_ready %}
+{{ block.super }}
+
+    enableSidebar('stocklation');
+
+
+{% endblock js_ready %}
