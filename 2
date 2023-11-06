@@ -1,0 +1,117 @@
+import logging
+
+from django.http import HttpResponse
+from django.urls import include, re_path
+from django.utils.translation import gettext_lazy as _
+
+from plugin import InvenTreePlugin
+from stock.models import StockItem
+from plugin.mixins import AppMixin, NavigationMixin, SettingsMixin, UrlsMixin, ActionMixin, PanelMixin
+from stock.views import StockItemDetail
+
+
+class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, NavigationMixin, PanelMixin, InvenTreePlugin):
+    """
+    Adds loaning management functionality to InvenTree.
+    """
+
+    NAME = "Loan Management"
+    SLUG = "loan"
+    TITLE = "Loan Management"
+    DESCRIPTION = "A plugin to manage loaning and tracking stock"
+    VERSION = "0.1"
+    AUTHOR = "Joshua Miller, Kyle Wilt @ RPI"
+
+    # Navigation
+    NAVIGATION_TAB_NAME = "Loan"
+    NAVIGATION_TAB_ICON = 'fas fa-plus'
+
+    NAVIGATION = [
+        {'name': 'Loaned Devices', 'link': 'plugin:loan:hi'},
+    ]
+
+    # Stock Metadata
+    STOCK_KEY_LOANED_STATE = SLUG + "_" + "loaned_state"
+    STOCK_KEY_DEFAULTS = {
+        STOCK_KEY_LOANED_STATE: False
+    }
+
+    # Custom Panels
+    STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
+
+    def get_custom_panels(self, view, request):
+        panels = []
+
+        # Stock Item View
+        if isinstance(view, StockItemDetail):
+            panels.append({
+                "title": LoaningManagementPlugin.STOCK_ITEM_LOAN_PANEL_TITLE,
+                "icon": "fas fa-handshake",
+                "content_template": "loaningmanagement/loaning_stats_panel.html",
+            })
+
+        return panels
+
+    def view_test(self, request):
+        """Very basic view."""
+        #return HttpResponse(f'Loaned State for stock item 69: {self.get_loaned_state(69)}')
+        return HttpResponse('Test!');
+
+    def setup_urls(self):
+        """Urls that are exposed by this plugin."""
+        he_urls = [
+            re_path(r'^he/', self.view_test, name='he'),
+            re_path(r'^ha/', self.view_test, name='ha'),
+        ]
+
+        return [
+            re_path(r'^hi/', self.view_test, name='hi'),
+            re_path(r'^ho/', include(he_urls), name='ho'),
+        ]
+
+    SETTINGS = {
+        'STOCK_LOANED_AUTOMATICALLY': {
+            'name': "Stock automatically marked as loanable?",
+            'description': "Are stock items ",
+            'validator': bool,
+            'default': 123,
+        }
+    }
+
+
+    # Loaned State - Keeps track if an item is currently loaned or not.
+    @staticmethod
+    def get_loaned_state(stock_id: int) -> bool:
+        """
+        Gets the loaned state metadata of Stock Item
+        :param stock_id:
+        :return:
+        """
+        # Get loaned state
+        loaned_state = StockItem.objects.get(pk=stock_id).get_metadata(LoaningManagementPlugin.STOCK_KEY_LOANED_STATE)
+
+        # Enforce a loaned state for the part
+        if loaned_state is None:
+            print("Part with id: {0} does not have a loaned state, setting to default".format(stock_id))
+            loaned_state = LoaningManagementPlugin.set_loaned_state(stock_id)
+
+        # Enforce that the loaned state is a boolean
+        if not isinstance(loaned_state, bool):
+            raise TypeError("Loaned item metadata is not of type Bool. Did another plugin edit the metadata?")
+
+        return loaned_state
+
+    @staticmethod
+    def set_loaned_state(stock_id: int, state: bool = STOCK_KEY_DEFAULTS[STOCK_KEY_LOANED_STATE]) -> bool:
+        """
+        Sets the loaned state metadata of Stock Item
+        :param state: The state to set the stock item to
+        :param stock_id:
+        :return: value of state that was set
+        """
+
+        stock_item: StockItem = StockItem.objects.get(pk=stock_id)  # Get stock item
+        stock_item.set_metadata(LoaningManagementPlugin.STOCK_KEY_LOANED_STATE, state)  # Set state metadata
+
+        return state
+
