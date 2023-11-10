@@ -1,4 +1,5 @@
 {% extends "page_base.html" %}
+
 {% load static %}
 {% load inventree_extras %}
 {% load plugin_extras %}
@@ -11,10 +12,8 @@
 
 
 {% block sidebar %}
-{% trans "Sublocations" as text %}
-{% include "sidebar_item.html" with label='sublocations' text=text icon="fa-sitemap" %}
-{% trans "Stock Items" as text %}
-{% include "sidebar_item.html" with label='stock' text=text icon="fa-boxes" %}
+{% trans "Loans" as text %}
+{% include "sidebar_item.html" with label='loans' text=text icon="fa-sitemap" %}
 {% endblock sidebar %}
 
 
@@ -29,7 +28,7 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
 
 {% block page_content %}
-<div class="card">
+<div class="panel">
     <div class="card-header">
         <h3 class="card-title">Add a Loan Session</h3>
     </div>
@@ -63,13 +62,10 @@
     </div>
 </div>
 
-<div class='panel panel-hidden' id='panel-loan'>
+<div class='panel panel-hidden' id='panel-loans'>
     <div class='panel-heading'>
         <div class='d-flex flex-wrap'>
             <h4>{% trans "Stock Tracking Information" %}</h4>
-            {% include "spacer.html" %}
-            <div class='btn-group' role='group'>
-            </div>
         </div>
     </div>
     <div class='panel-content'>
@@ -77,13 +73,6 @@
             {% include "filter_list.html" with id="loanitems" %}
         </div>
         <table class='table table-condensed table-striped' id='loan-table' data-toolbar='#tracking-table-toolbar'>
-                <ul>
-                  {% for loan in loanitems %}
-                  <li>
-                    {{loan.first_name}} {{loan.last_name}}
-                  </li>
-                  {% endfor %}
-                </ul>
         </table>
     </div>
 </div>
@@ -91,14 +80,17 @@
 
 {% block js_load %}
 {{ block.super }}
+<script defer type="text/javascript" src={% static '/plugins/loanmanagement/test.js' %}></script>
 {% endblock js_load %}
 
 
 {% block js_ready %}
 {{ block.super }}
-    onPanelLoad('loan', function() {
-        alert("foo");
-    });;
+    onPanelLoad('loans', function() {
+        //loadTestTable($("#loan-table"), );
+    });
+
+enableSidebar('loanpotatoes');
 
 
 {% endblock js_ready %}
