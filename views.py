@@ -2,7 +2,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import ListView
 
-from .models import LoanUser
+from .models import LoanUser, LoanSession
 
 
 class LoanItemDetail(ListView):
@@ -11,3 +11,11 @@ class LoanItemDetail(ListView):
     context_object_name = 'loanitems'
     template_name = 'loansessionform_temp.html'
     model = LoanUser
+
+
+class LoanTrackingDetail(ListView):
+    """Detailed view of loan sessions"""
+
+    context_object_name = 'loanitems'
+    template_name = 'tracking.html'
+    model = LoanSession

@@ -5,6 +5,7 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import include, re_path, path
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import render
+from django.views.generic import RedirectView
 
 from plugin import InvenTreePlugin
 from .forms import LoanSessionMaker
@@ -30,11 +31,9 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
     NAVIGATION_TAB_NAME = "Loan"
     NAVIGATION_TAB_ICON = 'fas fa-exchange-alt'
 
-    # Stock Metadata
-    STOCK_KEY_LOANED_STATE = SLUG + "_" + "loaned_state"
-    STOCK_KEY_DEFAULTS = {
-        STOCK_KEY_LOANED_STATE: False
-    }
+    NAVIGATION = [
+        {'name': 'Loan Tracking', 'link': 'plugin:loan:tracking', 'icon': 'fas fa-clock'},
+    ]
 
     # Custom Panels
     STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
@@ -91,7 +90,7 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
 
     def setup_urls(self):
         from .urls import api_patterns
-        from .views import LoanItemDetail
+        from .views import LoanItemDetail, LoanTrackingDetail
 
         return [
             re_path(r'^hi/', self.view_test, name='hi'),
@@ -99,6 +98,8 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
             re_path(r'^get/', self.get_loan, name='get'),
             re_path(r'^test/', LoanItemDetail.as_view(), name='test'),
             re_path(r'^api/', include(api_patterns), name="api"),
+            re_path(r'^tracking/', LoanTrackingDetail.as_view(), name='tracking'),
+            re_path(r'^.*$', LoanTrackingDetail.as_view(), name='tracking')
         ]
 
     SETTINGS = {
@@ -112,7 +113,3 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
             ]
         }
     }
-
-    NAVIGATION = [
-        {'name': 'Loaned Devices', 'link': 'plugin:loan:hi', 'icon': 'fas fa-list'},
-    ]
