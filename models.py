@@ -34,11 +34,13 @@ class LoanUser(models.Model):
     )
 
     active = models.BooleanField(  # Is this user still active (and allowed to loan items)
-        verbose_name=_('Active')
+        verbose_name=_('Active'),
+        default=True
     )
 
     restricted = models.BooleanField(  # Is this user able to loan items?
-        verbose_name=_('Restricted')
+        verbose_name=_('Restricted'),
+        default=False
     )
 
 

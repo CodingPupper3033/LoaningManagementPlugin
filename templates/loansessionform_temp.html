@@ -80,14 +80,16 @@
 
 {% block js_load %}
 {{ block.super }}
-<script defer type="text/javascript" src={% static '/plugins/loanmanagement/test.js' %}></script>
+<script defer type='text/javascript'>
+{% include 'js/test.js' %}
+</script>
 {% endblock js_load %}
 
 
 {% block js_ready %}
 {{ block.super }}
     onPanelLoad('loans', function() {
-        //loadTestTable($("#loan-table"), );
+        loadTestTable($("#loan-table"), );
     });
 
 enableSidebar('loanpotatoes');

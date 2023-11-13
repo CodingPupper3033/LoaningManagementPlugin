@@ -1,4 +1,6 @@
 import datetime
+import stock.models as stock_models
+from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
 
@@ -19,11 +21,16 @@ class LoanSessionSerializer(serializers.ModelSerializer):
     # The default day the item will be expected to be returned will be today+the default time
     due_date = serializers.DateField(default=get_default_due_date, initial=get_default_due_date)
 
+    # The stock item will be serialized with the stock item serializer. This also shows the part detail.
+    from stock.serializers import StockItemSerializer
+    stock_detail = StockItemSerializer(source='stock_item', many=False, read_only=True, part_detail=True)
+
     class Meta:
         from .models import LoanSession
         app_label = "loanmanagement"
         fields = (
-        'id', 'stock_item', 'quantity', 'loan_date', 'due_date', 'returned', 'date_returned', 'loan_user', 'location')
+            'id', 'stock_item', 'quantity', 'loan_date', 'due_date', 'returned', 'date_returned', 'loan_user',
+            'location', 'stock_detail')
         model = LoanSession
 
 
