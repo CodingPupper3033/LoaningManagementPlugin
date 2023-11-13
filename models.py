@@ -53,7 +53,7 @@ class LoanSession(models.Model):
         verbose_name=_('Id')
     )
 
-    stock_item = models.ForeignKey(
+    stock = models.ForeignKey(
         "stock.StockItem",
         on_delete=models.CASCADE
     )

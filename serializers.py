@@ -23,13 +23,13 @@ class LoanSessionSerializer(serializers.ModelSerializer):
 
     # The stock item will be serialized with the stock item serializer. This also shows the part detail.
     from stock.serializers import StockItemSerializer
-    stock_detail = StockItemSerializer(source='stock_item', many=False, read_only=True, part_detail=True)
+    stock_detail = StockItemSerializer(source='stock', many=False, read_only=True, part_detail=True)
 
     class Meta:
         from .models import LoanSession
         app_label = "loanmanagement"
         fields = (
-            'id', 'stock_item', 'quantity', 'loan_date', 'due_date', 'returned', 'date_returned', 'loan_user',
+            'id', 'stock', 'quantity', 'loan_date', 'due_date', 'returned', 'date_returned', 'loan_user',
             'location', 'stock_detail')
         model = LoanSession
 
