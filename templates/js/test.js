@@ -35,6 +35,30 @@ function loadTestTable(table) {
                         icons: true,
                     });
                 }
+            },
+            {
+                field: 'quantity',
+                sortName: 'stock',
+                title: 'Stock',
+                sortable: true,
+                formatter: function(value, row) {
+
+                    var val = '';
+
+                    if (row.stock_detail.serial && row.stock_detail.quantity == 1) {
+                        // If there is a single unit with a serial number, use the serial number
+                        val = '# ' + row.stock_detail.serial;
+                    } else {
+                        // Format floating point numbers with this one weird trick
+                        val = formatDecimal(value);
+
+                        if (row.stock_detail.part_detail && row.stock_detail.part_detail.units) {
+                            val += ` ${row.stock_detail.part_detail.units}`;
+                        }
+                    }
+
+                    return renderLink(val, `/stock/item/${row.stock_detail.pk}/`);
+                }
             }
 
             ],
