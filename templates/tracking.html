@@ -4,3 +4,55 @@
 {% load inventree_extras %}
 {% load plugin_extras %}
 {% load i18n %}
+
+{% block heading %}
+{% trans "Loan Tracking" %}:
+{% endblock %}
+
+{% block details_right %}
+<table class='table table-striped table-condensed'>
+    <col width='25'>
+    <tr>
+        <td><span class='fas fa-history'></span></td>
+        <td>{% trans "Overdue" %}</td>
+        <td>{{ overdue }}</td>
+    </tr>
+    <tr>
+        <td><span class='fas fa-boxes'></span></td>
+        <td>{% trans "Stock Items" %}</td>
+        <td></td>
+    </tr>
+</table>
+{% endblock %}
+
+{% block page_content %}
+<!-- Overdue panel -->
+<div class='panel panel-hidden' id='panel-overdue'>
+    <div class='panel-heading'>
+        <div class='d-flex flex-wrap'>
+            <h4>{% trans "Overdue Stock Items" %}</h4>
+        </div>
+    </div>
+    <div class='panel-content'>
+        <table class='table table-condensed table-striped' id='overdue-table'>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_load %}
+{{ block.super }}
+<script defer type='text/javascript'>
+{% include 'js/loan.js' %}
+</script>
+{% endblock js_load %}
+
+{% block js_ready %}
+{{ block.super }}
+    onPanelLoad('overdue', function() {
+        loadOverdueTable($("#overdue-table"));
+    });
+
+enableSidebar('loantracking');
+
+{% endblock js_ready %}

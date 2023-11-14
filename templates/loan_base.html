@@ -5,7 +5,14 @@
 {% load plugin_extras %}
 {% load i18n %}
 
+{% block sidebar %}
+{% include "loan_tracking_sidebar.html" %}
+{% endblock sidebar %}
 
 {% block page_title %}
-{% inventree_title %} | {% trans "Loaning" %}
+{% inventree_title %} | {% trans "Loan Tracking" %}
 {% endblock page_title %}
+
+{% block actions %}
+    <!-- No Actions -->
+{% endblock %}

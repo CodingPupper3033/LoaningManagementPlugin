@@ -99,7 +99,7 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
             re_path(r'^test/', LoanItemDetail.as_view(), name='test'),
             re_path(r'^api/', include(api_patterns), name="api"),
             re_path(r'^tracking/', LoanTrackingDetail.as_view(), name='tracking'),
-            re_path(r'^.*$', LoanTrackingDetail.as_view(), name='tracking')
+            re_path(r'^', LoanTrackingDetail.as_view(), name='tracking')
         ]
 
     SETTINGS = {

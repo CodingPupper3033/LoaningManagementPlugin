@@ -1,3 +1,5 @@
+import datetime
+
 from django.urls import re_path, path, include
 from rest_framework import permissions
 
@@ -16,7 +18,14 @@ class LoanSessionMixin:
 
 class LoanSessionList(LoanSessionMixin, ListCreateAPI):
     """API endpoint for accessing a list of LoanSession objects, or creating a new LoanSession instance"""
-    pass
+
+    def get_queryset(self, *args, **kwargs):
+        queryset = super().get_queryset(*args, **kwargs)
+
+        overdue = self.request.query_params.get('overdue')
+        if overdue is not None and overdue.lower() == 'true':
+            return queryset.filter(returned=False, due_date__lt=datetime.date.today()).order_by('due_date')
+        return queryset
 
 
 class LoanSessionDetail(LoanSessionMixin, RetrieveUpdateDestroyAPI):
@@ -55,5 +64,3 @@ loan_user_api_urls = [
     ])),
     re_path(r'^.*$', LoanUserList.as_view(), name='api-loan-user-list'),
 ]
-
-

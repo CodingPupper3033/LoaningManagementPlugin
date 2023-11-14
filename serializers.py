@@ -11,6 +11,14 @@ def get_default_due_date():
         days=int(LoaningManagementPlugin().get_setting("DEFAULT_LOAN_DURATION_DAYS", cache=False)))
 
 
+def get_overdue_sessions_count():
+    """Returns a count of all overdue sessions"""
+    from .models import LoanSession
+    overdue = LoanSession.objects.filter(returned=False, due_date__lt=datetime.date.today())
+    overdue_serializer = LoanSessionSerializer(overdue, many=True)
+    return len(overdue_serializer.data)
+
+
 class LoanSessionSerializer(serializers.ModelSerializer):
     """Serializer for loan sessions"""
 

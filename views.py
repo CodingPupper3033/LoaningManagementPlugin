@@ -19,3 +19,12 @@ class LoanTrackingDetail(ListView):
     context_object_name = 'loanitems'
     template_name = 'tracking.html'
     model = LoanSession
+
+    def get_context_data(self, **kwargs):
+        """Extend template context."""
+        context = super().get_context_data(**kwargs)
+
+        from .serializers import get_overdue_sessions_count
+        context['overdue'] = get_overdue_sessions_count()
+
+        return context
