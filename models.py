@@ -1,11 +1,17 @@
 import datetime
 
 from django.core.validators import MinValueValidator
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 
 
 class LoanUser(models.Model):
+    @staticmethod
+    def get_api_url():
+        """Return API url."""
+        return '/plugin/loan/api/loanuser/'
+
     class Meta:
         app_label = "loanmanagement"
 
@@ -45,6 +51,11 @@ class LoanUser(models.Model):
 
 
 class LoanSession(models.Model):
+    @staticmethod
+    def get_api_url():
+        """Return API url."""
+        return '/plugin/loan/api/loansession/'
+
     class Meta:
         app_label = "loanmanagement"
 

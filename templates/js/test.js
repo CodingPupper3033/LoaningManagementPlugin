@@ -68,3 +68,31 @@ function loadTestTable(table) {
         }
     });
 }
+
+function createNewLoanSession() {
+    var url = '/plugin/loan/api/loansession/';
+    var options = {};
+
+    options.method = 'POST';
+    options.create = true;
+
+    options.fields = {
+        stock: {
+
+        },
+        loan_user: {
+
+        },
+        quantity: {
+
+        },
+        loan_date: {
+
+        },
+        due_date: {
+
+        }
+    }
+
+    constructForm(url, options);
+}
