@@ -15,28 +15,35 @@ class LoanUser(models.Model):
     class Meta:
         app_label = "loanmanagement"
 
-    id = models.AutoField(  # Internal ID value
-        primary_key=True,
-        verbose_name=_('Id')
-    )
-
     first_name = models.CharField(  # User's First Name
         max_length=250,
-        verbose_name=_('Name')
+        verbose_name=_('Name'),
+        null=False,
+        blank=False,
+        default=None
     )
 
     last_name = models.CharField(  # User's Last Name
         max_length=250,
-        verbose_name=_('Name')
+        verbose_name=_('Name'),
+        null=False,
+        blank=False,
+        default=None
     )
 
     email = models.EmailField(  # User's Email
         max_length=20,
-        verbose_name=_('Email')
+        verbose_name=_('Email'),
+        null=False,
+        blank=False,
+        default=None
     )
 
     idn = models.IntegerField(  # User's ID Number (For RPI, it's RIN)
-        verbose_name=_('RIN')
+        verbose_name=_('RIN'),
+        unique=True,
+        null=False,
+        blank=False
     )
 
     active = models.BooleanField(  # Is this user still active (and allowed to loan items)
@@ -58,11 +65,6 @@ class LoanSession(models.Model):
 
     class Meta:
         app_label = "loanmanagement"
-
-    id = models.AutoField(
-        primary_key=True,
-        verbose_name=_('Id')
-    )
 
     stock = models.ForeignKey(
         "stock.StockItem",

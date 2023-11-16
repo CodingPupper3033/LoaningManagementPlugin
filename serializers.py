@@ -35,7 +35,7 @@ class LoanSessionSerializer(serializers.ModelSerializer):
         from .models import LoanSession
         app_label = "loanmanagement"
         fields = (
-            'id', 'stock', 'quantity', 'loan_date', 'due_date', 'returned', 'date_returned', 'loan_user',
+            'pk', 'stock', 'quantity', 'loan_date', 'due_date', 'returned', 'date_returned', 'loan_user',
             'location', 'stock_detail')
         model = LoanSession
 
@@ -43,8 +43,14 @@ class LoanSessionSerializer(serializers.ModelSerializer):
 class LoanUserSerializer(serializers.ModelSerializer):
     """Serializer for loan users"""
 
+    # The username will be the same as the email. This is so that a loan user can be rendered the same as an InvenTree user in forms.
+    username = serializers.SerializerMethodField()
+
+    def get_username(self, obj):
+        return obj.email
+
     class Meta:
         from .models import LoanUser
         app_label = "loanmanagement"
-        fields = ('id', 'first_name', 'last_name', 'email', 'idn', 'active', 'restricted')
+        fields = ('pk', 'first_name', 'last_name', 'email', 'idn', 'active', 'restricted', 'username')
         model = LoanUser

@@ -80,8 +80,28 @@ function createNewLoanSession() {
         stock: {
 
         },
+        /*
         loan_user: {
+            label: "foo",
+            before: "obamna",
+            prefix: "prefix",
+            after: "after",
+            field_suffix: "suffix",
+            secondary: 'loanuser'
+        },
+         */
+        loan_user: {
+            model: 'user',
+            secondary: {
+                title: 'Add Part Category',
+                fields: {
 
+                }
+            }
+        },
+        loan_user_detail__idn: {
+            label: "IDN",
+            type: "integer"
         },
         quantity: {
 
