@@ -1,4 +1,6 @@
-
+{% load i18n %}
+{% load inventree_extras %}
+{% load generic %}
 
 function loadTestTable(table) {
     console.log('Loading test table');
@@ -28,7 +30,6 @@ function loadTestTable(table) {
                 title: 'Part',
                 visible: true,
                 formatter: function(value, row) {
-                    console.log(row.part_id)
                     return partDetail(row.stock_detail.part_detail, {
                         thumb: true,
                         link: true,
@@ -62,6 +63,16 @@ function loadTestTable(table) {
             }
 
             ],
+        queryFilters: {
+            custom_actions: [
+                {
+                    actions: makeStockActions(table),
+                    icon: 'fa-boxes',
+                    title: '{% trans "Stock Actions" %}',
+                    label: 'stock',
+                }
+            ]
+        },
         onLoadSuccess: function(tableData) {
             console.log('Table loaded');
             console.log(tableData);
@@ -69,14 +80,8 @@ function loadTestTable(table) {
     });
 }
 
-function createNewLoanSession() {
-    var url = '/plugin/loan/api/loansession/';
-    var options = {};
-
-    options.method = 'POST';
-    options.create = true;
-
-    options.fields = {
+function loanSessionFields(options={}) {
+     var fields = {
         stock: {
 
         },
@@ -113,6 +118,21 @@ function createNewLoanSession() {
 
         }
     }
+
+    return fields;
+}
+
+function createNewLoanSession() {
+    var url = '/plugin/loan/api/loansession/';
+    var options = {};
+
+    options.title = ' "Loan-out item"';
+
+    options.method = 'POST';
+
+    options.create = true;
+
+    options.fields = loanSessionFields(options);
 
     constructForm(url, options);
 }

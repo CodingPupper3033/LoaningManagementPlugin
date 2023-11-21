@@ -24,7 +24,8 @@ class LoanTrackingDetail(ListView):
         """Extend template context."""
         context = super().get_context_data(**kwargs)
 
-        from .serializers import get_overdue_sessions_count
-        context['overdue'] = get_overdue_sessions_count()
+        # Get the counts of different categories of loan sessions
+        context['overdue_count'] = LoanSession.objects.filter(LoanSession.OVERDUE_FILTER).count()
+        context['current_count'] = LoanSession.objects.filter(LoanSession.CURRENT_FILTER).count()
 
         return context

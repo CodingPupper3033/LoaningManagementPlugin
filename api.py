@@ -1,16 +1,48 @@
 import datetime
 
+import django_filters
 from django.urls import re_path, path, include
 from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
 from django_filters import rest_framework as rest_filters
 
 from InvenTree.mixins import (ListCreateAPI, RetrieveUpdateDestroyAPI)
+from InvenTree.api import APIDownloadMixin, ListCreateDestroyAPIView
 from .models import (LoanSession, LoanUser)
 from .serializers import (LoanSessionSerializer, LoanUserSerializer)
 
 from InvenTree.filters import (ORDER_FILTER, SEARCH_ORDER_FILTER,
                                SEARCH_ORDER_FILTER_ALIAS)
+from InvenTree.helpers import str2bool
+
+
+class LoanSessionFilter(django_filters.FilterSet):
+    """LoanSession object filter"""
+
+    class Meta:
+        model = LoanSession
+
+        fields = ['quantity']
+
+    overdue = rest_filters.BooleanFilter(label='Overdue', method='filter_overdue')
+
+    def filter_overdue(self, queryset, name, value):
+        """Filter by if session is overdue."""
+        if str2bool(value):
+            return queryset.filter(LoanSession.OVERDUE_FILTER).order_by('due_date')
+        else:
+            return queryset.exclude(LoanSession.OVERDUE_FILTER).order_by('due_date')
+
+    current = rest_filters.BooleanFilter(label='current', method='filter_current')
+
+    def filter_current(self, queryset, name, value):
+        """Filter by if session is currently loaned and not overdue."""
+        if str2bool(value):
+            return queryset.filter(LoanSession.CURRENT_FILTER).order_by('due_date')
+        else:
+            return queryset.exclude(LoanSession.CURRENT_FILTER).order_by('due_date')
+
+    returned = rest_filters.BooleanFilter(label='returned')
 
 
 class LoanSessionMixin:
@@ -21,18 +53,13 @@ class LoanSessionMixin:
     permission_classes = [permissions.IsAuthenticated]
 
 
-class LoanSessionList(LoanSessionMixin, ListCreateAPI):
+class LoanSessionList(LoanSessionMixin, APIDownloadMixin, ListCreateDestroyAPIView):
     """API endpoint for accessing a list of LoanSession objects, or creating a new LoanSession instance"""
+    filterset_class = LoanSessionFilter
+    filter_backends = SEARCH_ORDER_FILTER_ALIAS
 
-    def get_queryset(self, *args, **kwargs):
-        """Gets the queryset."""
-        # TODO FILTERSET?
-        queryset = super().get_queryset(*args, **kwargs)
-
-        overdue = self.request.query_params.get('overdue')
-        if overdue is not None and overdue.lower() == 'true':
-            return queryset.filter(returned=False, due_date__lt=datetime.date.today()).order_by('due_date')
-        return queryset
+    def download_queryset(self, queryset, export_format):
+        raise NotImplementedError("Implement sometime maybe so we can download the table")
 
 
 class LoanSessionDetail(LoanSessionMixin, RetrieveUpdateDestroyAPI):

@@ -2,7 +2,7 @@
 {% load static %}
 {% load inventree_extras %}
 
-{% trans "Overdue" as text %}
-{% include "sidebar_item.html" with label='overdue' text=text icon="fa-history" %}
+{% trans "Loaning" as text %}
+{% include "sidebar_item.html" with label='loan' text=text icon="fa-handshake" %}
 {% trans "Current " as text %}
-{% include "sidebar_item.html" with label='stock' text=text icon="fa-boxes" %}
+{% include "sidebar_item.html" with label='loaned' text=text icon="fa-boxes" %}

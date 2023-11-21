@@ -8,7 +8,6 @@ from django.shortcuts import render
 from django.views.generic import RedirectView
 
 from plugin import InvenTreePlugin
-from .forms import LoanSessionMaker
 from stock.models import StockItem
 from plugin.mixins import AppMixin, NavigationMixin, SettingsMixin, UrlsMixin, ActionMixin, PanelMixin
 from stock.views import StockItemDetail
@@ -69,7 +68,7 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
         return HttpResponse(f'Loaned State for stock item 69: {self.get_loaned_state(69)}')
 
     def add_loan(self, request):
-
+        from .forms import LoanSessionMaker
         context = {
             'form': LoanSessionMaker()
         }
@@ -111,5 +110,5 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
                 int,
                 MinValueValidator(0)
             ]
-        }
+        },
     }

@@ -1,12 +1,14 @@
 import datetime
 
 from django.core.validators import MinValueValidator
+from django.db.models import Q
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 
 
 class LoanUser(models.Model):
+    #from .loanmanagement import LoaningManagementPlugin
     @staticmethod
     def get_api_url():
         """Return API url."""
@@ -17,7 +19,7 @@ class LoanUser(models.Model):
 
     first_name = models.CharField(  # User's First Name
         max_length=250,
-        verbose_name=_('Name'),
+        verbose_name=_('First Name'),
         null=False,
         blank=False,
         default=None
@@ -25,7 +27,7 @@ class LoanUser(models.Model):
 
     last_name = models.CharField(  # User's Last Name
         max_length=250,
-        verbose_name=_('Name'),
+        verbose_name=_('Last Name'),
         null=False,
         blank=False,
         default=None
@@ -66,6 +68,19 @@ class LoanSession(models.Model):
     class Meta:
         app_label = "loanmanagement"
 
+    # Can a session be considered "overdue"?
+    OVERDUE_FILTER = Q(
+        returned=False,
+        due_date__lt=datetime.date.today()
+    )
+
+    # Can a session be considered "outstanding"?
+    CURRENT_FILTER = Q(
+        returned=False,
+        due_date__gte=datetime.date.today(),
+        loan_date__lte=datetime.date.today()
+    )
+
     stock = models.ForeignKey(
         "stock.StockItem",
         on_delete=models.CASCADE
@@ -90,7 +105,7 @@ class LoanSession(models.Model):
         verbose_name=_("Returned")
     )
 
-    date_returned = models.DateField(
+    returned_date = models.DateField(
         blank=True,
         null=True,
         verbose_name=_('Due Date')
