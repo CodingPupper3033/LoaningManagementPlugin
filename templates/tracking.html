@@ -31,13 +31,16 @@
 {% endblock %}
 
 {% block page_content %}
-<!-- Overdue panel -->
+<!-- Loaning panel -->
 <div class='panel panel-hidden' id='panel-loan'>
     <div class='panel-heading'>
         <div class='d-flex flex-wrap'>
             <h4>{% trans "Lent Items" %}</h4>
             {% include "spacer.html" %}
             <div class='btn-group' role='group'>
+                <button type='button' class='btn btn-info' id='loan-return' title='{% trans "Return an Item" %}'>
+                    <span class='fas fa-check-square'></span> {% trans "Return an Item" %}
+                </button>
                 <button type='button' class='btn btn-success' id='loan-create' title='{% trans "Loan an Item" %}'>
                     <span class='fas fa-share-square'></span> {% trans "Loan an Item" %}
                 </button>
@@ -51,6 +54,21 @@
         <table class='table table-condensed table-striped' data-toolbar='#loan-button-toolbar' id='loan-table'></table>
     </div>
 </div>
+    
+<!-- User panel -->
+<div class="panel panel-hidden" id="panel-user">
+    <div class="panel-heading">
+        <div class="d-flex flex-wrap">
+            <h4>Users:</h4>
+        </div>
+    </div>
+    <div class='panel-content'>
+        <div id='user-button-toolbar'>
+            {% include "filter_list.html" with id="user" %}
+        </div>
+        <table class='table table-condensed table-striped' data-toolbar='#user-button-toolbar' id='user-table'></table>
+    </div>
+</div>
 {% endblock %}
 
 {% block js_load %}
@@ -62,13 +80,23 @@
 
 {% block js_ready %}
 {{ block.super }}
+    // Load the loan panel
     onPanelLoad('loan', function() {
         // Load the loan table, and by default show only currently loaned items
-        loadLoanTable($("#loan-table"),{'current': true});
+        loadLoanTable($("#loan-table"));
+    });
+
+    $('#loan-return').click(function() {
+        returnLoanSession();
     });
 
     $('#loan-create').click(function() {
         createNewLoanSession();
+    });
+    
+    // Load the user panel
+    onPanelLoad('user', function() {
+        loadUserTable($("#user-table"));
     });
 
 

@@ -31,7 +31,7 @@ class LoanUserSerializer(serializers.ModelSerializer):
     class Meta:
         from .models import LoanUser
         app_label = "loanmanagement"
-        fields = ('pk', 'first_name', 'last_name', 'email', 'idn', 'active', 'restricted', 'username')
+        fields = ('pk', 'first_name', 'last_name', 'email', 'active', 'restricted', 'username')
         model = LoanUser
 
 

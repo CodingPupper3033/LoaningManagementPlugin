@@ -1,6 +1,6 @@
-{% load i18n %}
-{% load inventree_extras %}
-{% load generic %}
+//{% load i18n %}
+//{% load inventree_extras %}
+//{% load generic %}
 
 function loanUserFields(options={}) {
     var fields = {
@@ -76,6 +76,125 @@ function createNewLoanSession(options = {}) {
     constructForm(url, options);
 }
 
+function returnLoanSession(item_list, options = {}) {
+    var modal = options.modal || createNewModal();
+    options.modal = modal;
+
+    var stock_item = null;
+
+    // Extra form fields
+    //var extra = makeNotesField();
+
+    // Header content
+    var header = `
+    <div id='header-div'>
+    </div>
+    `;
+
+    function updateStockItemInfo(stockitem) {
+        var div = $(modal + ' #header-div');
+
+        if (stockitem && stockitem.pk) {
+            div.html(`
+            <div class='alert alert-block alert-info'>
+            <b>{% trans "Stock Item" %}</b></br>
+            ${stockitem.part_detail.name}<br>
+            <i>${stockitem.serial ? ('#' + stockitem.serial) : stockitem.quantity}</i>
+            </div>
+            `);
+        } else {
+            div.html('');
+        }
+    }
+
+    barcodeDialog(
+        '{% trans "Check Into Location" %}',
+        {
+            headerContent: header,
+            //extraFields: extra,
+            modal: modal,
+            preShow: function() {
+                modalSetSubmitText(modal, '{% trans "Check In" %}');
+                modalEnable(modal, false);
+            },
+            onShow: function() {
+            },
+            onSubmit: function() {
+                // Called when the 'check-in' button is pressed
+                if (!stock_item) {
+                    return;
+                }
+
+                var items = [];
+
+                item_list.forEach(function(item) {
+                    items.push({
+                        pk: item.pk || item.id,
+                        quantity: item.quantity,
+                    });
+                });
+
+                var data = {
+                    location: stock_item.pk,
+                    notes: $(modal + ' #notes').val(),
+                    items: items,
+                };
+
+                // Send API request
+                inventreePut(
+                    '{% url "api-stock-transfer" %}',
+                    data,
+                    {
+                        method: 'POST',
+                        success: function(response, status) {
+                            // First hide the modal
+                            $(modal).modal('hide');
+
+                            if (options.success) {
+                                options.success(response);
+                            } else {
+                                location.reload();
+                            }
+                        }
+                    }
+                );
+            },
+            onScan: function(response) {
+                updateStockItemInfo(null);
+                if ('stockitem' in response) {
+
+                    var pk = response.stockitem.pk;
+
+                    inventreeGet(`{% url "api-stock-list" %}${pk}/`, {}, {
+                        success: function(response) {
+
+                            stock_item = response;
+
+                            updateStockItemInfo(stock_item);
+                            modalEnable(modal, true);
+                        },
+                        error: function() {
+                            // Barcode does *NOT* correspond to a StockLocation
+                            showBarcodeMessage(
+                                modal,
+                                '{% trans "Barcode does not match a valid item" %}',
+                                'warning',
+                            );
+                        }
+                    });
+                } else {
+                    // Barcode does *NOT* correspond to a StockLocation
+                    showBarcodeMessage(
+                        modal,
+                        '{% trans "Barcode does not match a valid item" %}',
+                        'warning',
+                    );
+                }
+            }
+        }
+    );
+}
+
 function getTrackingTableColumns() {
     var col = null;
     var columns = []
@@ -129,10 +248,7 @@ function getTrackingTableColumns() {
         field: 'loan_user',
         title: 'User',
         visible: true,
-        sortable: true,
-        formatter: function(value, row) {
-            return shortenString(row.loan_user_detail.username);
-        }
+        sortable: true
     }
 
     columns.push(col);
@@ -170,6 +286,9 @@ function getTrackingTableColumns() {
         visible: true,
         sortable: true,
         formatter: function(value) {
+            if (value == null) {
+                return '{% trans Unknown %}';
+            }
             return shortenString(value);
         }
     }
@@ -192,17 +311,83 @@ function getTrackingTableColumns() {
     return columns;
 }
 
-function loadLoanTable(table, options={}) {
+function getLoanTableColumns() {
     var col = null;
+    var columns = []
+
+    // First name
+    col = {
+        field: 'first_name',
+        title: 'First Name',
+        visible: true,
+        sortable: true
+    }
+    columns.push(col);
+
+    // Last name
+    col = {
+        field: 'last_name',
+        title: 'Last Name',
+        visible: true,
+        sortable: true
+    }
+    columns.push(col);
+
+    // Email
+    col = {
+        field: 'email',
+        title: 'Email',
+        visible: true,
+        sortable: true,
+        searchable: true,
+    }
+    columns.push(col);
+
+    // Restricted
+    col = {
+        field: 'restricted',
+        title: 'Restricted',
+        visible: true,
+        sortable: true,
+        formatter: function(value) {
+            if (value) {
+                return `<span class='badge badge-right rounded-pill bg-success'>{% trans "Allowed" %}</span>`;
+            } else {
+                return `<span class='badge badge-right rounded-pill bg-danger'>{% trans "Restricted" %}</span>`;
+            }
+        }
+    }
+    columns.push(col);
+
+    // Active
+    col = {
+        field: 'active',
+        title: 'Active',
+        visible: true,
+        sortable: true,
+        formatter: function(value) {
+            if (value) {
+                return `<span class='badge badge-right rounded-pill bg-success'>{% trans "Active" %}</span>`;
+            } else {
+                return `<span class='badge badge-right rounded-pill bg-danger'>{% trans "Disabled" %}</span>`;
+            }
+        }
+    }
+    columns.push(col);
+
+    return columns;
+}
+
+function loadLoanTable(table, options={}) {
     var columns = getTrackingTableColumns();
 
     const filterTarget = options.filterTarget || '#filter-list-loan';
     const filterKey = options.filterKey || options.name || 'loan';
 
-    let filters = loadTableFilters(filterKey, options.params); // Filtering doesn't do much as we can't override InvenTree's filtering
+    let filters = loadTableFilters(filterKey, options.params);
 
-    // Setup buttons above the table
-    setupFilterList(filterKey, table, filterTarget, {
+    // Add the overdue/current/returned filters. Also, reload the table when these filters are executed. This is a work-around for not being able to implement default filters for custom plugin tables
+    let filterOptions = {
         singular_name: '{% trans "loan session" %}',
         plural_name: '{% trans "loan sessions" %}',
         custom_actions: [
@@ -213,14 +398,17 @@ function loadLoanTable(table, options={}) {
                         title: '{% trans "Overdue" %}',
                         label: 'overdue',
                         callback: function(data) {
+                            clearTableFilters(filterKey);
                             const overdue = !table.bootstrapTable('getOptions').query_params['overdue'];
-                            let options = {}
 
                             if (overdue) {
-                                options['overdue'] = 'true';
+                                filters = addTableFilter(filterKey, 'overdue', 'true');
+                            } else {
+                                filters = removeTableFilter(filterKey, 'overdue');
                             }
 
-                            reloadTableFilters(table, options, {});
+                            reloadTableFilters(table, filters, filterOptions);
+                            setupFilterList(filterKey, table, filterTarget, filterOptions);
                         }
                     },
                     {
@@ -228,15 +416,17 @@ function loadLoanTable(table, options={}) {
                         title: '{% trans "Loaned" %}',
                         label: 'current',
                         callback: function(data) {
+                            clearTableFilters(filterKey);
                             const current = !table.bootstrapTable('getOptions').query_params['current'];
 
-                            let options = {}
-
                             if (current) {
-                                options['current'] = 'true';
+                                filters = addTableFilter(filterKey, 'current', 'true');
+                            } else {
+                                filters = removeTableFilter(filterKey, 'current');
                             }
 
-                            reloadTableFilters(table, options, {});
+                            reloadTableFilters(table, filters, filterOptions);
+                            setupFilterList(filterKey, table, filterTarget, filterOptions);
                         }
                     },
                     {
@@ -244,16 +434,17 @@ function loadLoanTable(table, options={}) {
                         title: '{% trans "Returned" %}',
                         label: 'returned',
                         callback: function(data) {
-                            console.log('Returned');
+                            clearTableFilters(filterKey);
                             const returned = !table.bootstrapTable('getOptions').query_params['returned'];
 
-                            let options = {}
-
                             if (returned) {
-                                options['returned'] = 'true';
+                                filters = addTableFilter(filterKey, 'returned', 'true');
+                            } else {
+                                filters = removeTableFilter(filterKey, 'returned');
                             }
 
-                            reloadTableFilters(table, options, {});
+                            reloadTableFilters(table, filters, filterOptions);
+                            setupFilterList(filterKey, table, filterTarget, filterOptions);
                         }
                     }
                 ],
@@ -262,7 +453,10 @@ function loadLoanTable(table, options={}) {
                 label: 'loan',
             }
         ]
-    });
+    }
+
+    // Setup buttons above the table
+    setupFilterList(filterKey, table, filterTarget, filterOptions);
 
     filters = Object.assign(filters, options.params);
 
@@ -272,8 +466,30 @@ function loadLoanTable(table, options={}) {
         name: 'loan',
         queryParams: filters,
         columns: columns,
-        onLoadSuccess: function(tableData) {
-        }
+        uniqueId: 'pk',
+        idField: 'pk',
+        formatNoMatches: function() {
+            return '{% trans "No loan sessions found" %}';
+        },
+        onLoadSuccess: function(tableData) {}
     });
 }
 
+function loadUserTable(table, options = {}) {
+    var columns = getLoanTableColumns();
+
+    table.inventreeTable({
+        url: '/plugin/loan/api/loanuser/',
+        method: 'get',
+        name: 'loanuser',
+        columns: columns,
+        sidePagination: 'server', // Allows the server to search for a RIN number (has to exactly match)
+        uniqueId: 'pk',
+        idField: 'pk',
+        formatNoMatches: function() {
+            return '{% trans "No loan users found" %}';
+        },
+        onLoadSuccess: function(tableData) {}
+    });
+
+}
