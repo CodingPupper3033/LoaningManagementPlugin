@@ -19,10 +19,11 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
     Adds loaning management functionality to InvenTree.
     """
 
+    # Plugin Metadata
     NAME = "Loan Management"
     SLUG = "loan"
     TITLE = "Loan Management"
-    DESCRIPTION = "A plugin to manage loaning and tracking stock"
+    DESCRIPTION = "A plugin to manage loaning and tracking stock items."
     VERSION = "0.0.1"
     AUTHOR = "Joshua Miller, Kyle Wilt @ RPI"
 
@@ -31,76 +32,14 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
     NAVIGATION_TAB_ICON = 'fas fa-exchange-alt'
 
     NAVIGATION = [
-        {'name': 'Loan Tracking', 'link': 'plugin:loan:tracking', 'icon': 'fas fa-clock'},
+        {
+            'name': 'Loan Tracking',
+            'link': 'plugin:loan:tracking',
+            'icon': 'fas fa-clock'
+        },
     ]
 
-    # Custom Panels
-    STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
-
-    def get_custom_panels(self, view, request):
-        panels = []
-
-        # Stock Item View
-        if isinstance(view, StockItemDetail):
-            panels.append({
-                "title": LoaningManagementPlugin.STOCK_ITEM_LOAN_PANEL_TITLE,
-                "icon": "fas fa-handshake",
-                "content_template": "loaningmanagement/loaning_stats_panel.html",
-            })
-
-        return panels
-
-    def view_test(self, request):
-        items = StockItem.objects.all()
-
-        # print(list(animes.values()))
-
-        #from common.models import InvenTreeSetting
-        data = {
-            'items': list(items.values()),
-            #'models': list(model.__name__ for model in apps.get_models()),
-            #'apps': list(app.verbose_name for app in apps.get_app_configs()),
-            #'add_date': getDefaultDueDate()
-        }
-
-        return JsonResponse(data)
-        """Very basic view."""
-        return HttpResponse(f'Loaned State for stock item 69: {self.get_loaned_state(69)}')
-
-    def add_loan(self, request):
-        from .forms import LoanSessionMaker
-        context = {
-            'form': LoanSessionMaker()
-        }
-        #return render(request, 'add.html', context)
-        return render(request, 'loansessionform_temp.html', context)
-
-    def get_loan(self, request):
-        from .models import LoanSession
-        loans = LoanSession.objects.all()
-
-        # print(list(animes.values()))
-
-        data = {
-            'loans': list(loans.values())
-        }
-
-        return JsonResponse(data)
-
-    def setup_urls(self):
-        from .urls import api_patterns
-        from .views import LoanItemDetail, LoanTrackingDetail
-
-        return [
-            re_path(r'^hi/', self.view_test, name='hi'),
-            re_path(r'^add/', self.add_loan, name='add'),
-            re_path(r'^get/', self.get_loan, name='get'),
-            re_path(r'^test/', LoanItemDetail.as_view(), name='test'),
-            re_path(r'^api/', include(api_patterns), name="api"),
-            re_path(r'^tracking/', LoanTrackingDetail.as_view(), name='tracking'),
-            re_path(r'^', LoanTrackingDetail.as_view(), name='tracking')
-        ]
-
+    # Settings
     SETTINGS = {
         'DEFAULT_LOAN_DURATION_DAYS': {
             'name': _('Default Loan Duration'),  # TODO Rewrite
@@ -112,3 +51,30 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
             ]
         },
     }
+
+    # Custom Panels - Not implemented yet
+    # STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
+
+    def get_custom_panels(self, view, request):
+        panels = []
+
+        # Stock Item View - Not implemented yet
+        # if isinstance(view, StockItemDetail):
+        #     panels.append({
+        #         "title": LoaningManagementPlugin.STOCK_ITEM_LOAN_PANEL_TITLE,
+        #         "icon": "fas fa-handshake",
+        #         "content_template": "loaningmanagement/loaning_stats_panel.html",
+        #     })
+
+        return panels
+
+    # URL Patterns for the plugin
+    def setup_urls(self):
+        from .urls import api_patterns
+        from .views import LoanItemDetail, LoanTrackingDetail
+
+        return [
+            re_path(r'^api/', include(api_patterns), name="api"),
+            re_path(r'^tracking/', LoanTrackingDetail.as_view(), name='tracking'),
+            re_path(r'^', LoanTrackingDetail.as_view(), name='tracking')
+        ]

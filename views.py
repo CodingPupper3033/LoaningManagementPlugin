@@ -7,7 +7,6 @@ from .models import LoanUser, LoanSession
 
 class LoanItemDetail(ListView):
     """Detailed view of a single StockItem object."""
-
     context_object_name = 'loanitems'
     template_name = 'loansessionform_temp.html'
     model = LoanUser
@@ -21,11 +20,18 @@ class LoanTrackingDetail(ListView):
     model = LoanSession
 
     def get_context_data(self, **kwargs):
-        """Extend template context."""
+        """
+        Returns extra data to the template.
+        Extra Data:
+            overdue_count: The number of overdue loan sessions
+            current_count: The number of current loan sessions
+            returned_count: The number of returned loan sessions
+        """
         context = super().get_context_data(**kwargs)
 
         # Get the counts of different categories of loan sessions
         context['overdue_count'] = LoanSession.objects.filter(LoanSession.OVERDUE_FILTER).count()
         context['current_count'] = LoanSession.objects.filter(LoanSession.CURRENT_FILTER).count()
+        context['returned_count'] = LoanSession.objects.filter(returned=True).count()
 
         return context

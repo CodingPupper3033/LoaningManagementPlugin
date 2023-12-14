@@ -8,7 +8,11 @@ from django.db import models
 
 
 class LoanUser(models.Model):
-    #from .loanmanagement import LoaningManagementPlugin
+    """
+    Model for a user that can loan items.
+    This is a separate model from the InvenTree user model so that loan users can be created without creating an
+    InvenTree user (without them logging in).
+    """
     @staticmethod
     def get_api_url():
         """Return API url."""
@@ -17,7 +21,7 @@ class LoanUser(models.Model):
     class Meta:
         app_label = "loanmanagement"
 
-    first_name = models.CharField(  # User's First Name
+    first_name = models.CharField(
         max_length=250,
         verbose_name=_('First Name'),
         null=False,
@@ -25,7 +29,7 @@ class LoanUser(models.Model):
         default=None
     )
 
-    last_name = models.CharField(  # User's Last Name
+    last_name = models.CharField(
         max_length=250,
         verbose_name=_('Last Name'),
         null=False,
@@ -33,22 +37,23 @@ class LoanUser(models.Model):
         default=None
     )
 
-    email = models.EmailField(  # User's Email
+    email = models.EmailField(
         max_length=20,
         verbose_name=_('Email'),
+        unique=True,
         null=False,
         blank=False,
         default=None
     )
 
-    idn = models.IntegerField(  # User's ID Number (For RPI, it's RIN)
+    idn = models.IntegerField(  # For RPI, it's RIN
         verbose_name=_('RIN'),
         unique=True,
         null=False,
         blank=False
     )
 
-    active = models.BooleanField(  # Is this user still active (and allowed to loan items)
+    active = models.BooleanField(  # Is this user still active in the company/system?
         verbose_name=_('Active'),
         default=True
     )
@@ -60,25 +65,31 @@ class LoanUser(models.Model):
 
 
 class LoanSession(models.Model):
+    """ Represents an item being loaned to a user for a period of time."""
     @staticmethod
     def get_api_url():
         """Return API url."""
         return '/plugin/loan/api/loansession/'
 
+    @staticmethod
+    def get_end_of_day():
+        """Return the very end of yesterday. This allows for a loan to not be considered overdue on the day it is due."""
+        return datetime.date.today() + datetime.timedelta(milliseconds=-1)
+
     class Meta:
         app_label = "loanmanagement"
 
-    # Can a session be considered "overdue"?
+    # Sessions that have not been returned and are past their due date.
     OVERDUE_FILTER = Q(
         returned=False,
-        due_date__lt=datetime.date.today()
+        due_date__lt=get_end_of_day()
     )
 
-    # Can a session be considered "outstanding"?
+    # Sessions that have not been returned and are not past their due date.
     CURRENT_FILTER = Q(
         returned=False,
-        due_date__gte=datetime.date.today(),
-        loan_date__lte=datetime.date.today()
+        due_date__gte=get_end_of_day(),
+        loan_date__lte=get_end_of_day()
     )
 
     stock = models.ForeignKey(

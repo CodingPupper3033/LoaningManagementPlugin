@@ -11,22 +11,24 @@ def get_default_due_date():
         days=int(LoaningManagementPlugin().get_setting("DEFAULT_LOAN_DURATION_DAYS", cache=False)))
 
 
-def get_overdue_sessions_count():
-    """Returns a count of all overdue sessions"""
-    from .models import LoanSession
-    overdue = LoanSession.objects.filter(LoanSession.OVERDUE_FILTER)
-    overdue_serializer = LoanSessionSerializer(overdue, many=True)
-    return len(overdue_serializer.data)
-
-
 class LoanUserSerializer(serializers.ModelSerializer):
-    """Serializer for loan users"""
+    """Serialize Loan Users"""
 
-    # The username will be the same as the email. This is so that a loan user can be rendered the same as an InvenTree user in forms.
+    # The username will be the same as the email. This is so that a loan user can be rendered as an InvenTree user in modals.
     username = serializers.SerializerMethodField()
 
-    def get_username(self, obj):
+    @staticmethod
+    def get_username(obj):
         return obj.email
+
+    def validate(self, data):
+        """Validate the data being passed in."""
+
+        # If the user is not active, they should be restricted.
+        if not data['active']:
+            data['restricted'] = True
+
+        return data
 
     class Meta:
         from .models import LoanUser
@@ -36,12 +38,21 @@ class LoanUserSerializer(serializers.ModelSerializer):
 
 
 class LoanUserBriefSerializer(serializers.ModelSerializer):
-    """Serializer for loan users"""
+    """
+    Brief Serializer for loan users. This is used in the loan session serializer.
+    Serializes:
+        pk
+        first_name
+        last_name
+        email
+        username
+    """
 
     # The username will be the same as the email. This is so that a loan user can be rendered the same as an InvenTree user in forms.
     username = serializers.SerializerMethodField()
 
-    def get_username(self, obj):
+    @staticmethod
+    def get_username(obj):
         return obj.email
 
     class Meta:
@@ -52,7 +63,7 @@ class LoanUserBriefSerializer(serializers.ModelSerializer):
 
 
 class LoanSessionSerializer(serializers.ModelSerializer):
-    """Serializer for loan sessions"""
+    """Serializes Loan Sessions"""
 
     # The default day the item was loaned will be set to today.
     loan_date = serializers.DateField(default=datetime.date.today, initial=datetime.date.today)
@@ -64,6 +75,14 @@ class LoanSessionSerializer(serializers.ModelSerializer):
     stock_detail = StockItemSerializer(source='stock', many=False, read_only=True, part_detail=True)
 
     loan_user_detail = LoanUserBriefSerializer(source='loan_user', many=False, read_only=True)
+
+    @staticmethod
+    def validate_stock(value):
+        """Validate that the stock item is not already loaned out."""
+        from .models import LoanSession
+        if LoanSession.objects.filter(stock=value, returned=False).exists():
+            raise serializers.ValidationError("Stock item is already loaned out")
+        return value
 
     class Meta:
         from .models import LoanSession

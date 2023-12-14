@@ -2,32 +2,30 @@
 //{% load inventree_extras %}
 //{% load generic %}
 
-function loanUserFields(options={}) {
-    var fields = {
+/**
+ * Gets the fields for the loan user creation form
+ * @returns fields for the loan user creation form
+ * @see  constructForm
+ */
+function loanUserFields() {
+    return {
         first_name: {},
         last_name: {},
         email: {},
         idn: {}
-    }
-
-    return fields;
+    };
 }
 
-function loanSessionFields(options={}) {
-    var fields = {
+/**
+ * Gets the fields for the loan session creation form
+ * @returns fields for the loan session creation form
+ * @see constructForm
+ */
+function loanSessionFields() {
+    return {
         stock: {
             help_text: '{% trans "Select stock item to loan" %}',
         },
-        /*
-        loan_user: {
-            label: "foo",
-            before: "obamna",
-            prefix: "prefix",
-            after: "after",
-            field_suffix: "suffix",
-            secondary: 'loanuser'
-        },
-         */
         loan_user: {
             model: 'user', // Override our plugin's default model (which is 'loanuser') with (built-in)'user' for the dropdown to work
             icon: 'fa-user',
@@ -52,18 +50,17 @@ function loanSessionFields(options={}) {
         location: {
             icon: 'fa-clipboard',
             help_text: '{% trans "Optionally, enter the name of the location the item will be loaned to" %}',
-        },
-        location: {
-            icon: 'fa-clipboard',
-            help_text: '{% trans "Optionally, enter the name of the location the item will be loaned to" %}',
         }
-    }
-
-    return fields;
+    };
 }
 
+// noinspection JSUnusedGlobalSymbols
+/**
+ * Launches a modal form to create a LoanSession
+ * @see LoanSessionList
+ */
 function createNewLoanSession(options = {}) {
-    const url = '/plugin/loan/api/loansession/';
+    const url = '/plugin/loan/api/loansession/'; // API endpoint for creating a new LoanSession - Shouldn't be hardcoded
 
     options.title = '{% trans "Loan Stock Item" %}';
 
@@ -71,28 +68,36 @@ function createNewLoanSession(options = {}) {
 
     options.create = true;
 
+    // Fields for the form
     options.fields = loanSessionFields(options);
 
     constructForm(url, options);
 }
 
+// noinspection JSUnusedGlobalSymbols
+/**
+ * Launches a modal form to mark a LoanSession as returned
+ * @todo Properly implement this. Only do barcode as otherwise you can just look it up in the table.
+ * @param item_list
+ * @param options
+ */
 function returnLoanSession(item_list, options = {}) {
-    var modal = options.modal || createNewModal();
+    const modal = options.modal || createNewModal();
     options.modal = modal;
 
-    var stock_item = null;
+    let stock_item = null;
 
     // Extra form fields
     //var extra = makeNotesField();
 
     // Header content
-    var header = `
+    const header = `
     <div id='header-div'>
     </div>
     `;
 
     function updateStockItemInfo(stockitem) {
-        var div = $(modal + ' #header-div');
+        const div = $(modal + ' #header-div');
 
         if (stockitem && stockitem.pk) {
             div.html(`
@@ -125,7 +130,7 @@ function returnLoanSession(item_list, options = {}) {
                     return;
                 }
 
-                var items = [];
+                const items = [];
 
                 item_list.forEach(function(item) {
                     items.push({
@@ -134,7 +139,7 @@ function returnLoanSession(item_list, options = {}) {
                     });
                 });
 
-                var data = {
+                const data = {
                     location: stock_item.pk,
                     notes: $(modal + ' #notes').val(),
                     items: items,
@@ -146,7 +151,7 @@ function returnLoanSession(item_list, options = {}) {
                     data,
                     {
                         method: 'POST',
-                        success: function(response, status) {
+                        success: function(response) {
                             // First hide the modal
                             $(modal).modal('hide');
 
@@ -163,7 +168,7 @@ function returnLoanSession(item_list, options = {}) {
                 updateStockItemInfo(null);
                 if ('stockitem' in response) {
 
-                    var pk = response.stockitem.pk;
+                    const pk = response.stockitem.pk;
 
                     inventreeGet(`{% url "api-stock-list" %}${pk}/`, {}, {
                         success: function(response) {
@@ -195,16 +200,131 @@ function returnLoanSession(item_list, options = {}) {
     );
 }
 
-function getTrackingTableColumns() {
-    var col = null;
-    var columns = []
+/**
+ * Removes all filters from the table and sets the given filter to filterValue, removes it if it already is set.
+ * @param table
+ * @param filterKey
+ * @param filterTarget
+ * @param filterOptions
+ * @param filterString filter to update
+ * @param filterValue value to set the filter to
+ */
+function tableSetSingleFilter(table, filterKey, filterTarget, filterOptions, filterString, filterValue = true) {
+    // Remove existing filters
+    clearTableFilters(filterKey);
+
+    // Gets the value of the string filter
+    const table_param = table.bootstrapTable('getOptions').query_params[filterString];
+
+    // Add or remove the filter
+    if (table_param == null) {
+        filters = addTableFilter(filterKey, filterString, filterValue);
+    } else {
+        filters = removeTableFilter(filterKey, filterString);
+    }
+
+    // Update the filter list (including reshowing the filter list
+    reloadTableFilters(table, filters, filterOptions);
+    setupFilterList(filterKey, table, filterTarget, filterOptions);
+}
+
+/**
+ * Renders a badge for the active/restricted state of a loan user
+ * @param value active/restricted state of a loan user
+ * @returns pill indicating the active/restricted state of a loan user
+ */
+function activeRestrictedBadge(value) {
+    if (!value) {
+        return `<span class='badge badge-right rounded-pill bg-success'>{% trans "Allowed" %}</span>`;
+    } else {
+        return `<span class='badge badge-right rounded-pill bg-danger'>{% trans "Restricted" %}</span>`;
+    }
+}
+
+/**
+ * Renders a badge for the active/disabled state of a loan user
+ * @param value active/disabled state of a loan user
+ * @returns pill indicating the active/disabled state of a loan user
+ */
+function activeDisabledBadge(value) {
+    if (value) {
+        return `<span class='badge badge-right rounded-pill bg-success'>{% trans "Active" %}</span>`;
+    } else {
+        return `<span class='badge badge-right rounded-pill bg-danger'>{% trans "Disabled" %}</span>`;
+    }
+}
+
+// noinspection JSUnusedGlobalSymbols
+/**
+ * Loads a loan session table
+ * @param table HTML table to load the loan session table into
+ * @param options Options for the table
+ * Options:
+ * - url: URL to load the table from
+ * - params: Query parameters when requesting loan sessions
+ * - disableFilters: Disable the filters for the table
+ */
+function loadLoanTable(table, options= {}) {
+    options.params = options.params || {};
+
+    let filters = {};
+
+    if (!options.disableFilters) {
+        const filterTarget = options["filterTarget"] || '#filter-list-loan';
+        const filterKey = options["filterKey"] || options.name || 'loan';
+
+        // Add the overdue/current/returned filters. Also, reload the table when these filters are executed. This is a work-around for not being able to implement default filters for custom plugin tables
+        let filterOptions = {
+            download: false, // TODO add download functionality in the api
+            singular_name: '{% trans "loan session" %}',
+            plural_name: '{% trans "loan sessions" %}',
+            custom_actions: [
+                {
+                    actions: [
+                        {
+                            icon: 'fa-calendar-times',
+                            title: '{% trans "Overdue" %}',
+                            label: 'overdue',
+                            callback: () => tableSetSingleFilter(table, filterKey, filterTarget, filterOptions, 'overdue')
+                        },
+                        {
+                            icon: 'fa-calendar',
+                            title: '{% trans "Loaned" %}',
+                            label: 'current',
+                            callback: () => tableSetSingleFilter(table, filterKey, filterTarget, filterOptions, 'current')
+                        },
+                        {
+                            icon: 'fa-calendar-check',
+                            title: '{% trans "Returned" %}',
+                            label: 'returned',
+                            callback: () => tableSetSingleFilter(table, filterKey, filterTarget, filterOptions, 'returned')
+                        }
+                    ],
+                    icon: 'fa-filter',
+                    title: '{% trans "Loan Filters" %}',
+                    label: 'loan',
+                }
+            ]
+        }
+
+        // Get the previous filters set by the user.
+        filters = loadTableFilters(filterKey, options.params);
+
+        // Setup buttons above the table/filters for the table
+        setupFilterList(filterKey, table, filterTarget, filterOptions);
+    }
+
+    filters = Object.assign(filters, options.params);
+
+    // Create the columns for the table
+    let col;
+    const columns = [];
 
     // Part the stock is associated with
     col = {
         field: 'part_item',
         title: 'Part',
         visible: true,
-        sortable: true,
         formatter: function(value, row) {
             return partDetail(row.stock_detail.part_detail, {
                 thumb: true,
@@ -214,6 +334,10 @@ function getTrackingTableColumns() {
         }
     }
 
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
     // Stock item serial number
@@ -221,12 +345,11 @@ function getTrackingTableColumns() {
         field: 'quantity',
         sortName: 'stock',
         title: 'Stock Item',
-        sortable: true,
         formatter: function(value, row) {
-            var val = '';
+            let val;
 
             // Does the stock have a serial number?
-            if (row.stock_detail.serial && row.stock_detail.quantity == 1) {
+            if (row.stock_detail.serial && row.stock_detail.quantity === 1) {
                 // If there is a single unit with a serial number, use the serial number
                 val = '# ' + row.stock_detail.serial;
             } else {
@@ -242,13 +365,20 @@ function getTrackingTableColumns() {
         }
     }
 
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
     col = {
         field: 'loan_user',
         title: 'User',
-        visible: true,
-        sortable: true
+        visible: true
+    }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
     }
 
     columns.push(col);
@@ -264,6 +394,10 @@ function getTrackingTableColumns() {
         }
     }
 
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
     // Date due
@@ -277,6 +411,10 @@ function getTrackingTableColumns() {
         }
     }
 
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
     // Location lent
@@ -284,13 +422,16 @@ function getTrackingTableColumns() {
         field: 'location',
         title: 'Location Lent',
         visible: true,
-        sortable: true,
         formatter: function(value) {
             if (value == null) {
                 return '{% trans Unknown %}';
             }
             return shortenString(value);
         }
+    }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
     }
 
     columns.push(col);
@@ -300,37 +441,112 @@ function getTrackingTableColumns() {
         field: 'returned_date',
         title: 'Returned Date',
         visible: true,
-        sortable: true,
         formatter: function(value) {
             return renderDate(value);
         }
     }
 
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
-    return columns;
+    // Show the table
+    table.inventreeTable({
+        url: options.url || '/plugin/loan/api/loansession/', // Hardcoded API endpoint (shouldn't be)
+        method: 'get',
+        name: 'loan',
+        original: options.params,
+        sidePagination: 'server',
+        queryParams: filters,
+        columns: columns,
+        uniqueId: 'pk',
+        idField: 'pk',
+        formatNoMatches: function() {
+            return '{% trans "No loan sessions found" %}';
+        }
+    });
 }
 
-function getLoanTableColumns() {
-    var col = null;
-    var columns = []
+// noinspection JSUnusedGlobalSymbols
+/**
+ * Loads a loan user table
+ * @param table HTML table to load the loan user table into
+ * @param options Options for the table
+ * Options:
+ * - url: URL to load the table from
+ * - params: Query parameters when requesting loan users
+ * - disableFilters: Disable the filters for the table
+ */
+function loadUserTable(table, options = {}) {
+    options.params = options.params || {};
+
+    let filters = {};
+
+    if (!options.disableFilters) {
+        const filterTarget = options["filterTarget"] || '#filter-list-user';
+        const filterKey = options["filterKey"] || options.name || 'user';
+
+        // Add the active/restricted filters. Also, reload the table when these filters are executed. This is a work-around for not being able to implement default filters for custom plugin tables
+        let filterOptions = {
+            download: false, // TODO add download functionality in the api
+            singular_name: '{% trans "loan user" %}',
+            plural_name: '{% trans "loan users" %}',
+            custom_actions: [
+                {
+                    actions: [
+                        {
+                            icon: 'fa-user',
+                            title: '{% trans "Active" %}',
+                            label: 'active',
+                            callback: () => tableSetSingleFilter(table, filterKey, filterTarget, filterOptions, 'active')
+                        }
+                    ],
+                    icon: 'fa-filter',
+                    title: '{% trans "User Filters" %}',
+                    label: 'user',
+                }
+            ]
+        }
+
+        // Get the previous filters set by the user.
+        filters = loadTableFilters(filterKey, options.params);
+
+        // Setup buttons above the table/filters for the table
+        setupFilterList(filterKey, table, filterTarget, filterOptions);
+    }
+
+    filters = Object.assign(filters, options.params);
+
+    // Create the columns for the table
+    let col;
+    const columns = [];
 
     // First name
     col = {
         field: 'first_name',
         title: 'First Name',
-        visible: true,
-        sortable: true
+        visible: true
     }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
     // Last name
     col = {
         field: 'last_name',
         title: 'Last Name',
-        visible: true,
-        sortable: true
+        visible: true
     }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
     // Email
@@ -338,158 +554,58 @@ function getLoanTableColumns() {
         field: 'email',
         title: 'Email',
         visible: true,
-        sortable: true,
         searchable: true,
     }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
-    // Restricted
+    // Restricted State
     col = {
         field: 'restricted',
         title: 'Restricted',
         visible: true,
         sortable: true,
-        formatter: function(value) {
-            if (value) {
-                return `<span class='badge badge-right rounded-pill bg-success'>{% trans "Allowed" %}</span>`;
-            } else {
-                return `<span class='badge badge-right rounded-pill bg-danger'>{% trans "Restricted" %}</span>`;
-            }
-        }
+        formatter: activeRestrictedBadge
     }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
-    // Active
+    // Active State
     col = {
         field: 'active',
         title: 'Active',
         visible: true,
-        sortable: true,
-        formatter: function(value) {
-            if (value) {
-                return `<span class='badge badge-right rounded-pill bg-success'>{% trans "Active" %}</span>`;
-            } else {
-                return `<span class='badge badge-right rounded-pill bg-danger'>{% trans "Disabled" %}</span>`;
-            }
-        }
+        formatter: activeDisabledBadge
     }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
     columns.push(col);
 
-    return columns;
-}
-
-function loadLoanTable(table, options={}) {
-    var columns = getTrackingTableColumns();
-
-    const filterTarget = options.filterTarget || '#filter-list-loan';
-    const filterKey = options.filterKey || options.name || 'loan';
-
-    let filters = loadTableFilters(filterKey, options.params);
-
-    // Add the overdue/current/returned filters. Also, reload the table when these filters are executed. This is a work-around for not being able to implement default filters for custom plugin tables
-    let filterOptions = {
-        singular_name: '{% trans "loan session" %}',
-        plural_name: '{% trans "loan sessions" %}',
-        custom_actions: [
-            {
-                actions: [
-                    {
-                        icon: 'fa-calendar-times',
-                        title: '{% trans "Overdue" %}',
-                        label: 'overdue',
-                        callback: function(data) {
-                            clearTableFilters(filterKey);
-                            const overdue = !table.bootstrapTable('getOptions').query_params['overdue'];
-
-                            if (overdue) {
-                                filters = addTableFilter(filterKey, 'overdue', 'true');
-                            } else {
-                                filters = removeTableFilter(filterKey, 'overdue');
-                            }
-
-                            reloadTableFilters(table, filters, filterOptions);
-                            setupFilterList(filterKey, table, filterTarget, filterOptions);
-                        }
-                    },
-                    {
-                        icon: 'fa-calendar',
-                        title: '{% trans "Loaned" %}',
-                        label: 'current',
-                        callback: function(data) {
-                            clearTableFilters(filterKey);
-                            const current = !table.bootstrapTable('getOptions').query_params['current'];
-
-                            if (current) {
-                                filters = addTableFilter(filterKey, 'current', 'true');
-                            } else {
-                                filters = removeTableFilter(filterKey, 'current');
-                            }
-
-                            reloadTableFilters(table, filters, filterOptions);
-                            setupFilterList(filterKey, table, filterTarget, filterOptions);
-                        }
-                    },
-                    {
-                        icon: 'fa-calendar-check',
-                        title: '{% trans "Returned" %}',
-                        label: 'returned',
-                        callback: function(data) {
-                            clearTableFilters(filterKey);
-                            const returned = !table.bootstrapTable('getOptions').query_params['returned'];
-
-                            if (returned) {
-                                filters = addTableFilter(filterKey, 'returned', 'true');
-                            } else {
-                                filters = removeTableFilter(filterKey, 'returned');
-                            }
-
-                            reloadTableFilters(table, filters, filterOptions);
-                            setupFilterList(filterKey, table, filterTarget, filterOptions);
-                        }
-                    }
-                ],
-                icon: 'fa-filter',
-                title: '{% trans "Loan Filters" %}',
-                label: 'loan',
-            }
-        ]
-    }
-
-    // Setup buttons above the table
-    setupFilterList(filterKey, table, filterTarget, filterOptions);
-
-    filters = Object.assign(filters, options.params);
-
+    // Show the table
     table.inventreeTable({
-        url: '/plugin/loan/api/loansession/',
+        url: options.url || '/plugin/loan/api/loanuser/',
         method: 'get',
-        name: 'loan',
+        name: 'loanuser',
+        original: options.params,
+        sidePagination: 'server', // Allows the server to check for RIN number (since it should be hidden from the user)
         queryParams: filters,
         columns: columns,
         uniqueId: 'pk',
         idField: 'pk',
         formatNoMatches: function() {
-            return '{% trans "No loan sessions found" %}';
-        },
-        onLoadSuccess: function(tableData) {}
-    });
-}
-
-function loadUserTable(table, options = {}) {
-    var columns = getLoanTableColumns();
-
-    table.inventreeTable({
-        url: '/plugin/loan/api/loanuser/',
-        method: 'get',
-        name: 'loanuser',
-        columns: columns,
-        sidePagination: 'server', // Allows the server to search for a RIN number (has to exactly match)
-        uniqueId: 'pk',
-        idField: 'pk',
-        formatNoMatches: function() {
             return '{% trans "No loan users found" %}';
-        },
-        onLoadSuccess: function(tableData) {}
+        }
     });
 
 }
