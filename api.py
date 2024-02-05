@@ -3,7 +3,7 @@ from django.urls import re_path, path, include
 from rest_framework import permissions
 from django_filters import rest_framework as rest_filters
 
-from InvenTree.mixins import (ListCreateAPI, RetrieveUpdateDestroyAPI)
+from InvenTree.mixins import (CreateAPI, ListCreateAPI, RetrieveUpdateDestroyAPI)
 from InvenTree.api import APIDownloadMixin, ListCreateDestroyAPIView
 from .models import (LoanSession, LoanUser)
 from .serializers import (LoanSessionSerializer, LoanUserSerializer)

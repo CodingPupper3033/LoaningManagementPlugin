@@ -31,6 +31,7 @@ function loanSessionFields() {
             icon: 'fa-user',
             secondary: {
                 title: 'Add User',
+                api_url: '/plugin/loan/api/loanuser/', // API endpoint for creating a new LoanUser - Shouldn't be hardcoded
                 fields: loanUserFields()
             },
             help_text: '{% trans "User to loan the stock item to" %}',
@@ -200,6 +201,25 @@ function returnLoanSession(item_list, options = {}) {
     );
 }
 
+// noinspection JSUnusedGlobalSymbols
+/**
+ * Launches a modal form to create a LoanUser
+ */
+function createNewLoanUser(options = {}) {
+    const url = '/plugin/loan/api/loanuser/'; // API endpoint for creating a new LoanUser - Shouldn't be hardcoded
+
+    options.title = '{% trans "Loan User Item" %}';
+
+    options.method = 'POST';
+
+    options.create = true;
+
+    // Fields for the form
+    options.fields = loanUserFields(options);
+
+    constructForm(url, options);
+}
+
 /**
  * Removes all filters from the table and sets the given filter to filterValue, removes it if it already is set.
  * @param table
@@ -282,6 +302,67 @@ function loadLoanTable(table, options= {}) {
                 {
                     actions: [
                         {
+                            icon: 'fa-check-square',
+                            title: '{% trans "Return Item" %}',
+                            label: 'return',
+                            callback: (data) => {
+                                    // Generate modal HTML content
+                                let actionTitle = '';
+                                let formTitle = '';
+
+                                let html = `
+                                    <table class='table table-striped table-condensed' id='stock-adjust-table'>
+                                    <thead>
+                                    <tr>
+                                        <th>{% trans "Part" %}</th>
+                                        <th>{% trans "Stock" %}</th>
+                                        <th>{% trans "Location" %}</th>
+                                        <th>${actionTitle || ''}</th>
+                                        <th></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    `;
+
+                                html += `</tbody></table>`;
+
+                                let notReturnedItems = 0;
+                                for (let i = 0; i < data.length; i++) {
+                                    let item = data[i];
+
+                                    // Skip items that have already been returned
+                                    if (item["returned"]) {
+                                        continue;
+                                    }
+
+                                    notReturnedItems++;
+                                }
+
+                                if (notReturnedItems === 0) {
+                                    showAlertDialog(
+                                        '{% trans "Select Loan Sessions" %}',
+                                        '{% trans "Select at least one non-returned loan session" %}',
+                                    );
+                                }
+
+                                constructForm('http://localhost:8000/plugin/loan/api/loansession/', {
+                                    method: 'POST',
+                                    fields: {},
+                                    preFormContent: html,
+                                    confirm: true,
+                                    confirmMessage: '{% trans "Confirm stock adjustment" %}',
+                                    title: formTitle
+                                });
+                            }
+                        }
+                    ],
+                    icon: 'fa-box',
+                    title: '{% trans "Loan Actions" %}',
+                    label: 'loan-actions',
+                },
+                {
+                    actions: [
+                        {
                             icon: 'fa-calendar-times',
                             title: '{% trans "Overdue" %}',
                             label: 'overdue',
@@ -318,7 +399,20 @@ function loadLoanTable(table, options= {}) {
 
     // Create the columns for the table
     let col;
-    const columns = [];
+    const columns = [
+        {
+            checkbox: true,
+            title: '{% trans "Select" %}',
+            searchable: false,
+            switchable: false,
+        },
+        {
+            field: 'pk',
+            title: 'ID',
+            visible: false,
+            switchable: false,
+        }
+    ];
 
     // Part the stock is associated with
     col = {
@@ -374,7 +468,11 @@ function loadLoanTable(table, options= {}) {
     col = {
         field: 'loan_user',
         title: 'User',
-        visible: true
+        visible: true,
+        formatter: function(value, row) {
+            // noinspection JSUnresolvedReference
+            return row.loan_user_detail.username;
+        }
     }
 
     if (!options.params.ordering) {

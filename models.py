@@ -1,6 +1,6 @@
 import datetime
 
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, validate_email
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -43,11 +43,13 @@ class LoanUser(models.Model):
         unique=True,
         null=False,
         blank=False,
-        default=None
+        default=None,
+        validators=[validate_email]
     )
 
     idn = models.IntegerField(  # For RPI, it's RIN
         verbose_name=_('RIN'),
+        validators=[MinValueValidator(0)],
         unique=True,
         null=False,
         blank=False

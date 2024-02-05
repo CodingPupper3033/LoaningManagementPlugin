@@ -25,7 +25,7 @@ class LoanUserSerializer(serializers.ModelSerializer):
         """Validate the data being passed in."""
 
         # If the user is not active, they should be restricted.
-        if not data['active']:
+        if 'active' in data.values() and not data['active']:
             data['restricted'] = True
 
         return data
@@ -33,7 +33,8 @@ class LoanUserSerializer(serializers.ModelSerializer):
     class Meta:
         from .models import LoanUser
         app_label = "loanmanagement"
-        fields = ('pk', 'first_name', 'last_name', 'email', 'active', 'restricted', 'username')
+        fields = ('pk', 'first_name', 'last_name', 'email', 'active', 'restricted', 'username', 'idn')
+        extra_kwargs = {'idn': {'write_only': True}}
         model = LoanUser
 
 
@@ -62,6 +63,7 @@ class LoanUserBriefSerializer(serializers.ModelSerializer):
         model = LoanUser
 
 
+
 class LoanSessionSerializer(serializers.ModelSerializer):
     """Serializes Loan Sessions"""
 
@@ -76,6 +78,7 @@ class LoanSessionSerializer(serializers.ModelSerializer):
 
     loan_user_detail = LoanUserBriefSerializer(source='loan_user', many=False, read_only=True)
 
+    # TODO: Add a validator that checks that there is enough of the stock to loan out, not just was it already loaned out
     @staticmethod
     def validate_stock(value):
         """Validate that the stock item is not already loaned out."""

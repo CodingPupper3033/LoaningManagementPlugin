@@ -65,6 +65,11 @@
     <div class="panel-heading">
         <div class="d-flex flex-wrap">
             <h4>Users</h4>
+            {% include "spacer.html" %}
+            <div class='btn-group' role='group'>
+            <button type='button' class='btn btn-success' id='loan-user-create' title='{% trans "Add User" %}'>
+                <span class='fas fa-user'></span> {% trans "Add User" %}
+            </button>
         </div>
     </div>
     <div class='panel-content'>
@@ -85,18 +90,24 @@
 
 {% block js_ready %}
 {{ block.super }}
-    // Load the loan panel
-    onPanelLoad('loan', function() {
-        // Load the loan table, and by default show only currently loaned items
-        loadLoanTable($("#loan-table"));
-    });
-
+    // Add on-click handlers for the loan panel
     $('#loan-return').click(function() {
         returnLoanSession();
     });
 
     $('#loan-create').click(function() {
         createNewLoanSession();
+    });
+    
+    // Add on-click handlers for the user panel
+    $('#loan-user-create').click(function() {
+        createNewLoanUser();
+    });
+    
+    // Load the loan panel
+    onPanelLoad('loan', function() {
+        // Load the loan table, and by default show only currently loaned items
+        loadLoanTable($("#loan-table"));
     });
     
     // Load the user panel
