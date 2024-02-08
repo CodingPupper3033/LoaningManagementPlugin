@@ -6,7 +6,7 @@ from django_filters import rest_framework as rest_filters
 from InvenTree.mixins import (CreateAPI, ListCreateAPI, RetrieveUpdateDestroyAPI)
 from InvenTree.api import APIDownloadMixin, ListCreateDestroyAPIView
 from .models import (LoanSession, LoanUser)
-from .serializers import (LoanSessionSerializer, LoanUserSerializer)
+from .serializers import (LoanSessionSerializer, LoanUserSerializer, LoanSessionReturnSerializer)
 
 from InvenTree.filters import (SEARCH_ORDER_FILTER_ALIAS)
 from InvenTree.helpers import str2bool
@@ -80,6 +80,23 @@ class LoanSessionDetail(LoanSessionMixin, RetrieveUpdateDestroyAPI):
     pass
 
 
+class LoanSessionAdjustView(CreateAPI):
+    """A generic class for handling loan session actions.
+
+    Subclasses exist for:
+
+    - StockCount: count stock items
+    """
+
+    queryset = LoanSession.objects.none()
+
+
+class LoanSessionReturn(LoanSessionAdjustView):
+    """API endpoint for returning a loaned item."""
+
+    serializer_class = LoanSessionReturnSerializer
+
+
 class LoanUserFilter(django_filters.FilterSet):
     """
     LoanSession object filter
@@ -136,6 +153,7 @@ loan_session_api_urls = [
     path(r'<int:pk>/', include([
         re_path(r'^.*$', LoanSessionDetail.as_view(), name='api-loan-session-detail')
     ])),
+    re_path(r'^return/', LoanSessionReturn.as_view(), name='api-loan-session-return'),
     re_path(r'^.*$', LoanSessionList.as_view(), name='api-loan-session-list'),
 ]
 

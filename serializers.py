@@ -3,6 +3,8 @@ import datetime
 from rest_framework import serializers
 
 from .loanmanagement import LoaningManagementPlugin
+from django.utils.translation import gettext_lazy as _
+from django.db import transaction
 
 
 def get_default_due_date():
@@ -63,7 +65,6 @@ class LoanUserBriefSerializer(serializers.ModelSerializer):
         model = LoanUser
 
 
-
 class LoanSessionSerializer(serializers.ModelSerializer):
     """Serializes Loan Sessions"""
 
@@ -94,3 +95,57 @@ class LoanSessionSerializer(serializers.ModelSerializer):
             'pk', 'stock', 'quantity', 'loan_date', 'due_date', 'returned', 'returned_date', 'loan_user',
             'location', 'stock_detail', 'loan_user_detail')
         model = LoanSession
+
+
+class LoanSessionReturnItemSerializer(serializers.Serializer):
+    """Serializer for a single LoanSession within a loan session return request.
+
+    Fields:
+        - item: LoanSession object
+        - returned_date: Date to record as returned
+    """
+    class Meta:
+        app_label = "loanmanagement"
+        fields = ['pk', 'returned_date']
+
+    from .models import LoanSession
+    pk = serializers.PrimaryKeyRelatedField(
+        queryset=LoanSession.objects.all(),
+        many=False,
+        allow_null=False,
+        required=True,
+        label='loan_session',
+        help_text=_('LoanSession primary key value')
+    )
+
+    returned_date = serializers.DateField(
+        allow_null=False,
+        required=True,
+        label='returned_date',
+        help_text=_('Date the item was returned')
+    )
+
+
+class LoanSessionReturnSerializer(serializers.Serializer):
+    """Serializer for returning loansession item(s)."""
+
+    items = LoanSessionReturnItemSerializer(many=True)
+
+    class Meta:
+        app_label = "loanmanagement"
+        fields = ['items']
+
+    def save(self):
+        data = self.validated_data
+
+        print(data)
+
+        items = data['items']
+
+        with transaction.atomic():
+            for item in items:
+                loan_session = item['pk']
+
+                loan_session.return_item(
+                    returned_date=item['returned_date']
+                )

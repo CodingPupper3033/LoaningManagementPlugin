@@ -58,7 +58,7 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
     def get_custom_panels(self, view, request):
         panels = []
 
-        # Stock Item View - Not implemented yet
+        # Stock Item Loaning information panel
         # if isinstance(view, StockItemDetail):
         #     panels.append({
         #         "title": LoaningManagementPlugin.STOCK_ITEM_LOAN_PANEL_TITLE,

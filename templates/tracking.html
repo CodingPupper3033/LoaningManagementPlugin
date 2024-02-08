@@ -43,9 +43,6 @@
             <h4>{% trans "Lent Items" %}</h4>
             {% include "spacer.html" %}
             <div class='btn-group' role='group'>
-                <button type='button' class='btn btn-info' id='loan-return' title='{% trans "Return an Item" %}'>
-                    <span class='fas fa-check-square'></span> {% trans "Return an Item" %}
-                </button>
                 <button type='button' class='btn btn-success' id='loan-create' title='{% trans "Loan an Item" %}'>
                     <span class='fas fa-share-square'></span> {% trans "Loan an Item" %}
                 </button>
@@ -91,10 +88,6 @@
 {% block js_ready %}
 {{ block.super }}
     // Add on-click handlers for the loan panel
-    $('#loan-return').click(function() {
-        returnLoanSession();
-    });
-
     $('#loan-create').click(function() {
         createNewLoanSession();
     });

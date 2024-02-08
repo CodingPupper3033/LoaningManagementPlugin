@@ -77,132 +77,6 @@ function createNewLoanSession(options = {}) {
 
 // noinspection JSUnusedGlobalSymbols
 /**
- * Launches a modal form to mark a LoanSession as returned
- * @todo Properly implement this. Only do barcode as otherwise you can just look it up in the table.
- * @param item_list
- * @param options
- */
-function returnLoanSession(item_list, options = {}) {
-    const modal = options.modal || createNewModal();
-    options.modal = modal;
-
-    let stock_item = null;
-
-    // Extra form fields
-    //var extra = makeNotesField();
-
-    // Header content
-    const header = `
-    <div id='header-div'>
-    </div>
-    `;
-
-    function updateStockItemInfo(stockitem) {
-        const div = $(modal + ' #header-div');
-
-        if (stockitem && stockitem.pk) {
-            div.html(`
-            <div class='alert alert-block alert-info'>
-            <b>{% trans "Stock Item" %}</b></br>
-            ${stockitem.part_detail.name}<br>
-            <i>${stockitem.serial ? ('#' + stockitem.serial) : stockitem.quantity}</i>
-            </div>
-            `);
-        } else {
-            div.html('');
-        }
-    }
-
-    barcodeDialog(
-        '{% trans "Check Into Location" %}',
-        {
-            headerContent: header,
-            //extraFields: extra,
-            modal: modal,
-            preShow: function() {
-                modalSetSubmitText(modal, '{% trans "Check In" %}');
-                modalEnable(modal, false);
-            },
-            onShow: function() {
-            },
-            onSubmit: function() {
-                // Called when the 'check-in' button is pressed
-                if (!stock_item) {
-                    return;
-                }
-
-                const items = [];
-
-                item_list.forEach(function(item) {
-                    items.push({
-                        pk: item.pk || item.id,
-                        quantity: item.quantity,
-                    });
-                });
-
-                const data = {
-                    location: stock_item.pk,
-                    notes: $(modal + ' #notes').val(),
-                    items: items,
-                };
-
-                // Send API request
-                inventreePut(
-                    '{% url "api-stock-transfer" %}',
-                    data,
-                    {
-                        method: 'POST',
-                        success: function(response) {
-                            // First hide the modal
-                            $(modal).modal('hide');
-
-                            if (options.success) {
-                                options.success(response);
-                            } else {
-                                location.reload();
-                            }
-                        }
-                    }
-                );
-            },
-            onScan: function(response) {
-                updateStockItemInfo(null);
-                if ('stockitem' in response) {
-
-                    const pk = response.stockitem.pk;
-
-                    inventreeGet(`{% url "api-stock-list" %}${pk}/`, {}, {
-                        success: function(response) {
-
-                            stock_item = response;
-
-                            updateStockItemInfo(stock_item);
-                            modalEnable(modal, true);
-                        },
-                        error: function() {
-                            // Barcode does *NOT* correspond to a StockLocation
-                            showBarcodeMessage(
-                                modal,
-                                '{% trans "Barcode does not match a valid item" %}',
-                                'warning',
-                            );
-                        }
-                    });
-                } else {
-                    // Barcode does *NOT* correspond to a StockLocation
-                    showBarcodeMessage(
-                        modal,
-                        '{% trans "Barcode does not match a valid item" %}',
-                        'warning',
-                    );
-                }
-            }
-        }
-    );
-}
-
-// noinspection JSUnusedGlobalSymbols
-/**
  * Launches a modal form to create a LoanUser
  */
 function createNewLoanUser(options = {}) {
@@ -274,6 +148,21 @@ function activeDisabledBadge(value) {
     }
 }
 
+function makeLoanActions(table) {
+    let actions = [
+        {
+            icon: 'fa-check-square',
+            title: '{% trans "Return Item" %}',
+            label: 'return',
+            callback: function(data) {
+                returnLoanSessions(table, data);
+            }
+        }
+    ];
+
+    return actions;
+}
+
 // noinspection JSUnusedGlobalSymbols
 /**
  * Loads a loan session table
@@ -300,62 +189,7 @@ function loadLoanTable(table, options= {}) {
             plural_name: '{% trans "loan sessions" %}',
             custom_actions: [
                 {
-                    actions: [
-                        {
-                            icon: 'fa-check-square',
-                            title: '{% trans "Return Item" %}',
-                            label: 'return',
-                            callback: (data) => {
-                                    // Generate modal HTML content
-                                let actionTitle = '';
-                                let formTitle = '';
-
-                                let html = `
-                                    <table class='table table-striped table-condensed' id='stock-adjust-table'>
-                                    <thead>
-                                    <tr>
-                                        <th>{% trans "Part" %}</th>
-                                        <th>{% trans "Stock" %}</th>
-                                        <th>{% trans "Location" %}</th>
-                                        <th>${actionTitle || ''}</th>
-                                        <th></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    `;
-
-                                html += `</tbody></table>`;
-
-                                let notReturnedItems = 0;
-                                for (let i = 0; i < data.length; i++) {
-                                    let item = data[i];
-
-                                    // Skip items that have already been returned
-                                    if (item["returned"]) {
-                                        continue;
-                                    }
-
-                                    notReturnedItems++;
-                                }
-
-                                if (notReturnedItems === 0) {
-                                    showAlertDialog(
-                                        '{% trans "Select Loan Sessions" %}',
-                                        '{% trans "Select at least one non-returned loan session" %}',
-                                    );
-                                }
-
-                                constructForm('http://localhost:8000/plugin/loan/api/loansession/', {
-                                    method: 'POST',
-                                    fields: {},
-                                    preFormContent: html,
-                                    confirm: true,
-                                    confirmMessage: '{% trans "Confirm stock adjustment" %}',
-                                    title: formTitle
-                                });
-                            }
-                        }
-                    ],
+                    actions: makeLoanActions(table),
                     icon: 'fa-box',
                     title: '{% trans "Loan Actions" %}',
                     label: 'loan-actions',
@@ -706,4 +540,173 @@ function loadUserTable(table, options = {}) {
         }
     });
 
+}
+
+/**
+ * Creates a modal to return stock items
+ */
+function returnLoanSessions(table, items, options={}) {
+    // ID Values of the not returned items
+    let id_values = [];
+
+    // Beginning of the modal HTML
+    let html = `
+        <table class='table table-striped table-condensed' id='loan-adjust-table'>
+        <thead>
+        <tr>
+            <th>{% trans "Part" %}</th>
+            <th>{% trans "Stock" %}</th>
+            <th>{% trans "User" %}</th>
+            <th></th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        `;
+
+    items.forEach(function(item) {
+        // Skip items that have already been returned
+        if (item["returned"]) {
+            return;
+        }
+
+        // Get data for the table row
+        const pk = item.pk;
+        const stock_detail = item.stock_detail;
+        const part_detail = stock_detail.part_detail;
+
+        // Get the stock item serial number or quantity
+        let serial_column = '';
+        // Does the stock have a serial number?
+        if (stock_detail.serial && stock_detail.quantity === 1) {
+            // If there is a single unit with a serial number, use the serial number
+            serial_column = '# ' + stock_detail.serial;
+        } else {
+            // Format floating point numbers with this one weird trick
+            serial_column = formatDecimal(stock_detail.quantity);
+
+            if (stock_detail.part_detail && stock_detail.part_detail.units) {
+                serial_column += ` ${stock_detail.part_detail.units}`;
+            }
+        }
+
+        let actionInput = constructField(
+            `returned_date_${pk}`,
+            {
+                type: 'date',
+                value: moment().format('YYYY-MM-DD'),
+                min_value: item.loan_date,
+                required: true,
+            },
+            {
+                hideLabels: true,
+            }
+        );
+
+        let buttons = wrapButtons(makeRemoveButton(
+            'button-loan-session-remove',
+            pk,
+            '{% trans "Remove stock item" %}',
+        ));
+
+        // noinspection JSUnresolvedReference
+        const thumb = thumbnailImage(part_detail.thumbnail || part_detail.image);
+
+        // Add this item as a row in the table
+        // noinspection JSUnresolvedReference
+        html += `
+            <tr id='loan_session_${pk}' class='loan-session-row'>
+                <td id='part_${pk}'>${thumb} ${part_detail.full_name}</td>
+                <td id='stock_${pk}'>${serial_column}</td>
+                <td id='user_${pk}'>${item.loan_user_detail.username}</td>
+                <td id='returned_date_${pk}'>${actionInput}</td>
+                <td id='buttons_${pk}'>${buttons}</td>
+            </tr>`;
+
+        // Add the pk to the list of items to be returned
+        id_values.push(item.pk);
+    });
+
+    // Validate there is at least one session selected/selectable
+    if (id_values.length == 0) {
+        showAlertDialog(
+            '{% trans "Select Stock Items" %}',
+            '{% trans "Select one or more stock items that have not been returned yet." %}'
+        );
+        return;
+    }
+
+    // Add the end of the table
+    html += `</tbody></table>`;
+
+    // URL for the return API
+    const url = '/plugin/loan/api/loansession/return/'; // TODO URL Still should not be hardcoded
+    // Create the form
+    constructForm(url, {
+        method: 'POST',
+        fields: {},
+        preFormContent: html,
+        confirm: true,
+        confirmMessage: '{% trans "Confirm Return" %}',
+        title: '{% trans "Return Stock Items" %}',
+        afterRender: function(fields, opts) {
+            // Add button callbacks to remove rows
+            $(opts.modal).find('.button-loan-session-remove').click(function () {
+                const pk = $(this).attr('pk');
+
+                $(opts.modal).find(`#loan_session_${pk}`).remove();
+            });
+        },
+        onSubmit: function(fields, opts) {
+            // Extract data elements from the form
+            const data = {
+                items: [],
+            };
+
+            items.forEach(function(item) {
+                var pk = item.pk;
+
+                // Does the row exist in the form?
+                var row = $(opts.modal).find(`#loan_session_${pk}`);
+
+                if (row.exists()) {
+                    const returned_date = getFormFieldValue(`returned_date_${pk}`, {}, opts);
+
+                    data.items.push({
+                        pk: pk,
+                        returned_date: returned_date,
+                    });
+                }
+            });
+
+            inventreePut(
+                url,
+                data,
+                {
+                    method: 'POST',
+                    success: function(response) {
+                        // Hide the modal
+                        $(opts.modal).modal('hide');
+
+                        // Refresh the table
+                        $(table).bootstrapTable('refresh');
+                    },
+                    error: function(xhr) {
+                        switch (xhr.status) {
+                        case 400:
+                            handleFormErrors(xhr.responseJSON, fields, opts);
+                            break;
+                        default:
+                            $(opts.modal).modal('hide');
+                            showApiError(xhr, opts.url);
+                            break;
+                        }
+                    }
+                }
+            );
+        },
+        onSuccess: function(response, opts) {
+            console.log("Success");
+        }
+    });
 }
