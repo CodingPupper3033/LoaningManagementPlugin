@@ -79,8 +79,6 @@ class LoanSessionSerializer(serializers.ModelSerializer):
 
     loan_user_detail = LoanUserBriefSerializer(source='loan_user', many=False, read_only=True)
 
-    # TODO: Figure out how to make stock_detail and loan_user_detail not show unless it is requested.
-
     # TODO: Add a validator that checks that there is enough of the stock to loan out, not just was it already loaned out
     @staticmethod
     def validate_stock(value):
