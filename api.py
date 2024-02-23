@@ -24,7 +24,7 @@ class LoanSessionFilter(django_filters.FilterSet):
     class Meta:
         model = LoanSession  # Django model to filter for
 
-        fields = ['quantity']  # Searchable by quantity
+        fields = ['quantity', 'stock']
 
     # Loan Session 'State' filters
     overdue = rest_filters.BooleanFilter(label='Overdue', method='filter_overdue')
@@ -73,6 +73,20 @@ class LoanSessionList(LoanSessionMixin, APIDownloadMixin, ListCreateAPI):
     def download_queryset(self, queryset, export_format):
         # TODO - Implement this
         raise NotImplementedError("Implement sometime maybe so we can download the table")
+
+    def get_serializer(self, *args, **kwargs):
+        try:
+            params = self.request.query_params
+
+            for key in ['stock_detail', 'user_detail']:
+                kwargs[key] = str2bool(params.get(key, False))
+        except AttributeError:
+            pass
+
+        kwargs['context'] = self.get_serializer_context()
+
+        return self.serializer_class(*args, **kwargs)
+
 
 
 class LoanSessionDetail(LoanSessionMixin, RetrieveUpdateDestroyAPI):

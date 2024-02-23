@@ -79,6 +79,8 @@ class LoanSessionSerializer(serializers.ModelSerializer):
 
     loan_user_detail = LoanUserBriefSerializer(source='loan_user', many=False, read_only=True)
 
+    # TODO: Figure out how to make stock_detail and loan_user_detail not show unless it is requested.
+
     # TODO: Add a validator that checks that there is enough of the stock to loan out, not just was it already loaned out
     @staticmethod
     def validate_stock(value):
@@ -95,6 +97,20 @@ class LoanSessionSerializer(serializers.ModelSerializer):
             'pk', 'stock', 'quantity', 'loan_date', 'due_date', 'returned', 'returned_date', 'loan_user',
             'location', 'stock_detail', 'loan_user_detail')
         model = LoanSession
+
+    def __init__(self, *args, **kwargs):
+        # Don't pass the 'fields' arg up to the superclass
+        stock_detail = kwargs.pop('stock_detail', False)
+        user_detail = kwargs.pop('user_detail', False)
+
+        # Instantiate the superclass normally
+        super().__init__(*args, **kwargs)
+
+        if not stock_detail:
+            self.fields.pop('stock_detail')
+
+        if not user_detail:
+            self.fields.pop('loan_user_detail')
 
 
 class LoanSessionReturnItemSerializer(serializers.Serializer):
@@ -137,8 +153,6 @@ class LoanSessionReturnSerializer(serializers.Serializer):
 
     def save(self):
         data = self.validated_data
-
-        print(data)
 
         items = data['items']
 

@@ -100,7 +100,12 @@
     // Load the loan panel
     onPanelLoad('loan', function() {
         // Load the loan table, and by default show only currently loaned items
-        loadLoanTable($("#loan-table"));
+        loadLoanTable($("#loan-table"),{
+            params: {
+                stock_detail: true,
+                user_detail: true
+            }
+        });
     });
     
     // Load the user panel

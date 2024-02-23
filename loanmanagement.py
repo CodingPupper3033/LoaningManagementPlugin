@@ -29,7 +29,7 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
 
     # Navigation
     NAVIGATION_TAB_NAME = "Loan"
-    NAVIGATION_TAB_ICON = 'fas fa-exchange-alt'
+    NAVIGATION_TAB_ICON = 'fas fa-handshake'
 
     NAVIGATION = [
         {
@@ -52,19 +52,20 @@ class LoaningManagementPlugin(AppMixin, ActionMixin, SettingsMixin, UrlsMixin, N
         },
     }
 
-    # Custom Panels - Not implemented yet
-    # STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
+    # Custom Panels
+    STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
 
     def get_custom_panels(self, view, request):
         panels = []
 
         # Stock Item Loaning information panel
-        # if isinstance(view, StockItemDetail):
-        #     panels.append({
-        #         "title": LoaningManagementPlugin.STOCK_ITEM_LOAN_PANEL_TITLE,
-        #         "icon": "fas fa-handshake",
-        #         "content_template": "loaningmanagement/loaning_stats_panel.html",
-        #     })
+        if isinstance(view, StockItemDetail):
+            panels.append({
+                "title": LoaningManagementPlugin.STOCK_ITEM_LOAN_PANEL_TITLE,
+                "icon": "fas fa-handshake",
+                "content_template": "loaning_stats_panel.html",
+                "javascript_template": "js/track.js",
+            })
 
         return panels
 
