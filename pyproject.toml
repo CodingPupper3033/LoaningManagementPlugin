@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools","wheel","pyyaml"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inventree-loan"
+version = "2024.06.04"
+description = "Inventree Plugin to manage stock loaning"
+license = {text = "MIT license"}
+keywords = ["inventree", "inventree-plugin", "loan"]
+authors = [
+    {name = "Joshua Miller", email = "josh@email.com"},
+    {name = "Kyle Wilt", email = "krwilt@gmail.com"}
+]
+requires-python=">=3.9"
+dependencies = ["django"]
+
+[project.urls]
+"Repository" = "https://github.com/CodingPupper3033/LoaningManagementPlugin"
+
+[project.entry-points."inventree_plugins"]
+inventree-loan = "inventree_loan:LoanPlugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]

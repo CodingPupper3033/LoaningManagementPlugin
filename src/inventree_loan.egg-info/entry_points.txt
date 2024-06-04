@@ -1,0 +1,2 @@
+[inventree_plugins]
+inventree-loan = inventree_loan:LoanPlugin
