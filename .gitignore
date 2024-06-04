@@ -1,1 +1,3 @@
 reinstall
+*/__pycache__/
+*/*.egg-info/
