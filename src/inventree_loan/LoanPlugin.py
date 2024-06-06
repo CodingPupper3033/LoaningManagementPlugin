@@ -13,7 +13,6 @@ from plugin import InvenTreePlugin
 from stock.models import StockItem
 from plugin.mixins import AppMixin, NavigationMixin, SettingsMixin, UrlsMixin, ActionMixin, PanelMixin
 from stock.views import StockItemDetail
-from .models import LoanUser, LoanSession
 
 class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixin, PanelMixin,InvenTreePlugin):
     """Main plugin class for loaning capabilities."""

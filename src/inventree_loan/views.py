@@ -1,15 +1,17 @@
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import ListView
+from django.contrib.auth import get_user_model
 
-from .models import LoanUser, LoanSession
+from .models import LoanSession
 
 
+"""Is this class needed anymore now that there is no LoanUser?"""
 class LoanItemDetail(ListView):
     """Detailed view of a single StockItem object."""
     context_object_name = 'loanitems'
     template_name = 'loansessionform_temp.html'
-    model = LoanUser
+    model = get_user_model()
 
 
 class LoanTrackingDetail(ListView):

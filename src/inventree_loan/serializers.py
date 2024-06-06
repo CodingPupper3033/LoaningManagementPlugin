@@ -33,11 +33,10 @@ class LoanUserSerializer(serializers.ModelSerializer):
         return data
 
     class Meta:
-        from .models import LoanUser
+        from django.contrib.auth import get_user_model
 #        app_label = "LoanPlugin"
-        fields = ('pk', 'first_name', 'last_name', 'email', 'active', 'restricted', 'username', 'idn')
-        extra_kwargs = {'idn': {'write_only': True}}
-        model = LoanUser
+        fields = ('pk', 'first_name', 'last_name', 'email', 'username',)
+        model = get_user_model()
 
 
 class LoanUserBriefSerializer(serializers.ModelSerializer):
@@ -59,10 +58,10 @@ class LoanUserBriefSerializer(serializers.ModelSerializer):
         return obj.email
 
     class Meta:
-        from .models import LoanUser
+        from django.contrib.auth import get_user_model
 #        app_label = "LoanPlugin"
         fields = ('pk', 'first_name', 'last_name', 'email', 'username')
-        model = LoanUser
+        model = get_user_model()
 
 
 class LoanSessionSerializer(serializers.ModelSerializer):

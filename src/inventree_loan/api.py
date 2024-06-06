@@ -2,10 +2,11 @@ import django_filters
 from django.urls import re_path, path, include
 from rest_framework import permissions
 from django_filters import rest_framework as rest_filters
+from django.contrib.auth import get_user_model
 
 from InvenTree.mixins import (CreateAPI, ListCreateAPI, RetrieveUpdateDestroyAPI)
 from InvenTree.api import APIDownloadMixin, ListCreateDestroyAPIView
-from .models import (LoanSession, LoanUser)
+from .models import LoanSession
 from .serializers import (LoanSessionSerializer, LoanUserSerializer, LoanSessionReturnSerializer)
 
 from InvenTree.filters import (SEARCH_ORDER_FILTER_ALIAS)
@@ -120,9 +121,10 @@ class LoanUserFilter(django_filters.FilterSet):
     """
 
     class Meta:
-        model = LoanUser
+        model = get_user_model()
 
-        fields = ['active', 'restricted']
+        fields = "__all__"
+        #fields = ['active', 'restricted']
 
 
 class LoanUserMixin:
@@ -131,7 +133,7 @@ class LoanUserMixin:
     Every API endpoint for LoanUser objects should inherit from this class
     """
     serializer_class = LoanUserSerializer
-    queryset = LoanUser.objects.all()
+    queryset = get_user_model().objects.all()
 
 
 class LoanUserList(LoanUserMixin, ListCreateAPI):
@@ -144,13 +146,11 @@ class LoanUserList(LoanUserMixin, ListCreateAPI):
         'first_name',
         'last_name',
         'email',
-        '=idn'  # Search for ID number, but has to be exact
+        'username',
     ]
 
     # Parameters to order the queryset/API requests by
     ordering = [
-        '-active',  # Active users first
-        'restricted',  # Unrestricted users first
         'last_name',  # Alphabetical by last name
         'first_name',  # Alphabetical by first name
         'email'

@@ -7,77 +7,16 @@ from django.db.models import Q
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.db import models, transaction
-#from .LoanPlugin import LoanPlugin
-
-class LoanUser(models.Model):
-    """
-    Model for a user that can loan items.
-    This is a separate model from the InvenTree user model so that loan users can be created without creating an
-    InvenTree user (without them logging in).
-    This model should be removed eventually in favor of using Inventree users
-    """
-#    @staticmethod
-#    def get_api_url():
-#        """Return API url."""
-#        return '/plugin/loan/api/loanuser/'
-#        return reverse('api-loanuser-list')
-#
-    class Meta:
-        app_label = "inventree_loan"
-
-    first_name = models.CharField(
-        max_length=250,
-        verbose_name=_('First Name'),
-        null=False,
-        blank=False,
-        default=None
-    )
-
-    last_name = models.CharField(
-        max_length=250,
-        verbose_name=_('Last Name'),
-        null=False,
-        blank=False,
-        default=None
-    )
-
-    email = models.EmailField(
-        max_length=20,
-        verbose_name=_('Email'),
-        unique=True,
-        null=False,
-        blank=False,
-        default=None,
-        validators=[validate_email]
-    )
-
-    idn = models.IntegerField(  # For RPI, it's RIN
-        verbose_name=_('RIN'),
-        validators=[MinValueValidator(0)],
-        unique=True,
-        null=False,
-        blank=False
-    )
-
-    active = models.BooleanField(  # Is this user still active in the company/system?
-        verbose_name=_('Active'),
-        default=True
-    )
-
-    restricted = models.BooleanField(  # Is this user able to loan items?
-        verbose_name=_('Restricted'),
-        default=False
-    )
-    
+from django.conf import settings
 
 class LoanSession(models.Model):
     """ Represents an item being loaned to a user for a period of time."""
-#    @staticmethod
-#    def get_api_url():
-#        """Return API url."""
-##        return '/plugin/loan/api/loansession/'
-#        return reverse('api-loansession-list')
-#
+    @staticmethod
+    def get_api_url():
+        """Return API url."""
+#        return '/plugin/loan/api/loansession/'
+        return reverse('api-loansession-list')
+
     class Meta:
         app_label = "inventree_loan"
 
@@ -131,7 +70,7 @@ class LoanSession(models.Model):
     )
 
     loan_user = models.ForeignKey(
-        "inventree_loan.LoanUser",
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE
     )
 

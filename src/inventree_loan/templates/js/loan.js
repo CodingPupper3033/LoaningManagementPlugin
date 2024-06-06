@@ -27,13 +27,15 @@ function loanSessionFields() {
             help_text: '{% trans "Select stock item to loan" %}',
         },
         loan_user: {
-            model: 'user', // Override our plugin's default model (which is 'loanuser') with (built-in)'user' for the dropdown to work
+            model: 'user',
             icon: 'fa-user',
+/*
             secondary: {
                 title: 'Add User',
                 api_url: '/plugin/loan/api/loanuser/', // API endpoint for creating a new LoanUser - Shouldn't be hardcoded
                 fields: loanUserFields()
             },
+*/
             help_text: '{% trans "User to loan the stock item to" %}',
         },
         quantity: {
@@ -299,9 +301,42 @@ function loadLoanTable(table, options= {}) {
 
     columns.push(col);
 
+
     col = {
         field: 'loan_user',
-        title: 'User',
+        title: 'First Name',
+        visible: true,
+        formatter: function(value, row) {
+            // noinspection JSUnresolvedReference
+            return row.loan_user_detail.first_name;
+        }
+    }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
+    columns.push(col);
+
+    col = {
+        field: 'loan_user',
+        title: 'Last Name',
+        visible: true,
+        formatter: function(value, row) {
+            // noinspection JSUnresolvedReference
+            return row.loan_user_detail.last_name;
+        }
+    }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
+    columns.push(col);
+
+    col = {
+        field: 'loan_user',
+        title: 'E-mail',
         visible: true,
         formatter: function(value, row) {
             // noinspection JSUnresolvedReference
@@ -384,6 +419,19 @@ function loadLoanTable(table, options= {}) {
 
     columns.push(col);
 
+    // Edit button
+    col = {
+        field: 'edit',
+        title: '',
+        visible: true,
+        formatter: function(value,row){
+            var bEdit = getLoanEditButton(row.pk);
+            return `<div class='btn-group float-right' role='group'>${bEdit}</div>`;
+        }
+    }
+    col['sortable'] = false;
+    columns.push(col);
+
     // Show the table
     table.inventreeTable({
         url: options.url || '/plugin/loan/api/loansession/', // Hardcoded API endpoint (shouldn't be)
@@ -398,6 +446,12 @@ function loadLoanTable(table, options= {}) {
         formatNoMatches: function() {
             return '{% trans "No loan sessions found" %}';
         }
+    });
+
+    table.on('click','.edit-loan',function() {
+        //window.alert({$(this).pk});
+        console.log(this);
+        console.log(this.getAttribute("pk"));
     });
 }
 
@@ -709,4 +763,17 @@ function returnLoanSessions(table, items, options={}) {
             console.log("Success");
         }
     });
+}
+
+
+/**
+ * Returns the html for a edit button (templated from notification.js)
+ *
+ * arguments:
+ * pk: primary key of the loan session
+**/
+function getLoanEditButton(pk) {
+    let bIcon = 'fas fa-pen-square';
+    
+    return `<button title={% trans "Edit Loan" %} class='edit-loan btn btn-smbtn-outline-secondary float-left' type='button' pk='${pk}' target='loanedit'><span class='${bIcon}'></span></button>`;
 }
