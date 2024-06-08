@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from InvenTree.mixins import (CreateAPI, ListCreateAPI, RetrieveUpdateDestroyAPI)
 from InvenTree.api import APIDownloadMixin, ListCreateDestroyAPIView
 from .models import LoanSession
-from .serializers import (LoanSessionSerializer, LoanUserSerializer, LoanSessionReturnSerializer)
+from .serializers import (LoanSessionSerializer, LoanUserSerializer, LoanSessionReturnSerializer, LoaneeSerializer)
 
 from InvenTree.filters import (SEARCH_ORDER_FILTER_ALIAS)
 from InvenTree.helpers import str2bool
@@ -143,6 +143,7 @@ class LoanUserList(LoanUserMixin, ListCreateAPI):
 
     # What to search for when searching for a LoanUser (in a table or using the search parameter)
     search_fields = [
+        'pk',
         'first_name',
         'last_name',
         'email',
@@ -161,6 +162,59 @@ class LoanUserDetail(LoanUserMixin, RetrieveUpdateDestroyAPI):
     """API endpoint for detail view of a single LoanUser object."""
     pass
 
+class LoaneeFilter(django_filters.FilterSet):
+    """
+    Allow filtering Loanees by:
+        ????
+    """
+
+    class Meta:
+        model = get_user_model()  # Django model to filter for
+
+        fields = '__all__'
+
+class LoaneeMixin:
+    """
+    Mixin class for Loanee API endpoints
+    Every API endpoint for Loanee objects should inherit from this class
+    """
+    serializer_class = LoaneeSerializer
+    queryset = get_user_model().objects.all()
+
+class LoaneeList(LoaneeMixin, APIDownloadMixin, ListCreateAPI):
+    """
+    API endpoint for accessing a list of Loanees
+    """
+    filterset_class = LoaneeFilter
+    filter_backends = SEARCH_ORDER_FILTER_ALIAS
+
+    def download_queryset(self, queryset, export_format):
+        # TODO - Implement this
+        raise NotImplementedError("Implement sometime maybe so we can download the table")
+
+    def get_queryset(self, *args, **kwargs):
+        """Get the number of items per user"""
+        queryset = super().get_queryset(*args, **kwargs)
+        queryset = LoaneeSerializer.annotate_queryset(queryset)
+        return queryset
+
+    search_fields = [
+        'pk',
+        'first_name',
+        'last_name',
+        'email',
+        'username',
+    ]
+
+    ordering_fields = [
+        'last_name',
+        'first_name',
+        'email',
+        'loaned',
+        'overdue',
+    ]
+
+    ordering = ['email']
 
 # URLS for the API endpoints
 loan_session_api_urls = [
@@ -176,4 +230,8 @@ loan_user_api_urls = [
         re_path(r'^.*$', LoanUserDetail.as_view(), name='api-loan-user-detail')
     ])),
     re_path(r'^.*$', LoanUserList.as_view(), name='api-loan-user-list'),
+]
+
+loanee_api_urls = [
+    re_path(r'^.*$', LoaneeList.as_view(), name='api-loanee-list'),
 ]

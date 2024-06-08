@@ -6,6 +6,14 @@ from .LoanPlugin import LoanPlugin
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 
+# For the loan annotations
+from django.db.models import F, Func, OuterRef, Subquery, IntegerField
+from django.db.models.functions import Coalesce
+from sql_util.utils import SubqueryCount
+from .models import LoanSession
+
+import logging
+logger = logging.getLogger('inventree')
 
 def get_default_due_date():
     """Adds the default loan time to the current day"""
@@ -160,3 +168,62 @@ class LoanSessionReturnSerializer(serializers.Serializer):
                 loan_session.return_item(
                     returned_date=item['returned_date']
                 )
+
+class LoaneeSerializer(serializers.ModelSerializer):
+    """Serializer for loanee objects."""
+    # The username will be the same as the email. This is so that a loan user can be rendered as an InvenTree user in modals.
+    username = serializers.SerializerMethodField()
+
+    loaned = serializers.IntegerField(read_only=True, label=_('Loaned'))
+    overdue = serializers.IntegerField(read_only=True, label=_('Overdue'))
+
+    class Meta:
+        from django.contrib.auth import get_user_model
+        fields = ('pk', 'first_name', 'last_name', 'email', 'username','loaned','overdue')
+        model = get_user_model()
+
+    def __init__(self, *args, **kwargs):
+        # Instantiate the superclass normally
+        super().__init__(*args, **kwargs)
+        
+    @staticmethod
+    def get_username(obj):
+        return obj.email
+
+    @staticmethod
+    def annotate_queryset(queryset):
+        """Annotate the items loaned into the queryset."""
+        queryset = queryset.annotate(
+            loaned= annotate_loanee_items(overdue=False),
+            overdue= annotate_loanee_items(overdue=True)
+        )
+        queryset = queryset.exclude(loaned=0)
+        return queryset
+        
+
+
+
+""" This are based on annotate_location_items() from stock/filters.py """
+def annotate_loanee_items(overdue=False):
+    """Construct a queryset annotation which returns the number of loaned utems to a particular user."""
+
+    # Construct a subquery to provide all items loaned by a specific user
+    if overdue:
+        subquery = LoanSession.objects.all().filter(
+            LoanSession.OVERDUE_FILTER,
+            loan_user=OuterRef('pk')
+        )
+    else:
+        subquery = LoanSession.objects.all().filter(
+            loan_user=OuterRef('pk')
+        )
+
+    return Coalesce(
+        Subquery(
+            subquery.annotate(total=Func(F('pk'), function='COUNT', output_field=IntegerField()))
+            .values('total')
+            .order_by()
+        ),
+        0,
+        output_field=IntegerField(),
+    )

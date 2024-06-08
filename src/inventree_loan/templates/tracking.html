@@ -64,9 +64,10 @@
             <h4>Users</h4>
             {% include "spacer.html" %}
             <div class='btn-group' role='group'>
-            <button type='button' class='btn btn-success' id='loan-user-create' title='{% trans "Add User" %}'>
-                <span class='fas fa-user'></span> {% trans "Add User" %}
-            </button>
+                <button type='button' class='btn btn-success' id='loan-user-create' title='{% trans "Add User" %}'>
+                    <span class='fas fa-user'></span> {% trans "Add User" %}
+                </button>
+            </div>
         </div>
     </div>
     <div class='panel-content'>
@@ -74,6 +75,27 @@
             {% include "filter_list.html" with id="user" %}
         </div>
         <table class='table table-condensed table-striped' data-toolbar='#user-button-toolbar' id='user-table'></table>
+    </div>
+</div>
+
+<!-- Loanee panel -->
+<div class="panel panel-hidden" id="panel-loanee">
+    <div class="panel-heading">
+        <div class="d-flex flex-wrap">
+            <h4>Loanees</h4>
+            {% include "spacer.html" %}
+            <!--<div class='btn-group' role='group'>
+                 <button type='button' class='btn btn-success' id='loan-user-create' title='{% trans "Add User" %}'>
+                     <span class='fas fa-user'></span> {% trans "Add User" %}
+                 </button>
+            </div>-->
+        </div>
+    </div>
+    <div class='panel-content'>
+        <div id='user-button-toolbar'>
+            {% include "filter_list.html" with id="user" %}
+        </div>
+        <table class='table table-condensed table-striped' data-toolbar='#user-button-toolbar' id='loanee-table'></table>
     </div>
 </div>
 {% endblock %}
@@ -111,6 +133,11 @@
     // Load the user panel
     onPanelLoad('user', function() {
         loadUserTable($("#user-table"));
+    });
+
+    // Load the loanee panel
+    onPanelLoad('loanee',function() {
+        loadLoaneeTable($("#loanee-table"));
     });
 
 
