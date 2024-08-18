@@ -51,7 +51,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
     }
             
     # Custom Panels
-    STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
+    STOCK_ITEM_LOAN_PANEL_TITLE = "Loan History"
     
     def get_custom_panels(self, view, request):
         panels = []
@@ -62,7 +62,8 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                 "title": LoanPlugin.STOCK_ITEM_LOAN_PANEL_TITLE,
                 "icon": "fas fa-handshake",
                 "content_template": "loaning_stats_panel.html",
-                "javascript_template": "js/track.js",
+                #"javascript_template": "js/track.js",
+                "javascript_template": "js/loan.js",
             })
 
         return panels

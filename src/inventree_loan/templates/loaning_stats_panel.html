@@ -3,15 +3,22 @@
 {% load plugin_extras %}
 {% load i18n %}
 
-<table class='table table-striped table-condensed'>
-    <col width='25'>
-    <tr>
-        <td><h5><span class="fas fa-handshake"></span></h5></td>
-        <td><h5>Status</h5></td>
-        <td>{{ item.pk }}</td>
-    </tr>
-</table>
-<div id='tracking-button-toolbar'>
-    {% include "filter_list.html" with id="tracking" %}
+    <!--Cannot add a button in the panel header as a panelmixin! The HTML here is within the
+              panel-content div. Therefore, add the button just below. Maybe can be done with javascript?-->
+    <div>
+        <div class='d-flex flex-wrap'>
+            {% include "spacer.html" %}
+            <div class='btn-group' role='group'>
+                <button type='button' class='btn btn-success' id='loan-create' title='{% trans "Loan Item" %}'>
+                    <span class='fas fa-share-square'></span> {% trans "Loan Item" %}
+                </button>
+            </div>
+        </div>
+    </div>
+<div id='user-button-toolbar'>
+    {% include "filter_list.html" with id="user" %}
 </div>
-<table class='table table-condensed table-striped' data-toolbar='#tracking-button-toolbar' id='tracking-table'></table>
+<table class='table table-condensed table-striped' data-toolbar='#user-button-toolbar' id='stockitem-table'></table>
+
+<script>
+</script>

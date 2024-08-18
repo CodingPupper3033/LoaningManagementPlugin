@@ -60,9 +60,10 @@ function loanSessionFields() {
 // noinspection JSUnusedGlobalSymbols
 /**
  * Launches a modal form to create a LoanSession
+ * defaults: a list of default values for fields, as desired.
  * @see LoanSessionList
  */
-function createNewLoanSession(options = {}) {
+function createNewLoanSession(options = {},defaults = {}) {
     const url = '/plugin/loan/api/loansession/'; // API endpoint for creating a new LoanSession - Shouldn't be hardcoded
 
     options.title = '{% trans "Loan Stock Item" %}';
@@ -73,6 +74,18 @@ function createNewLoanSession(options = {}) {
 
     // Fields for the form
     options.fields = loanSessionFields(options);
+    
+    // get default values from arguments
+    if(defaults){
+        Object.keys(defaults).forEach(key => {
+            options.fields[key].value = defaults[key]});
+    }
+    
+    options.onSuccess = function(respose) {
+        // Set the table to refresh
+        var table = options.table || '#loan-table';
+        $(table).bootstrapTable('refresh');
+    }
 
     constructForm(url, options);
 }
@@ -176,7 +189,17 @@ function makeLoanActions(table) {
  * - disableFilters: Disable the filters for the table
  */
 function loadLoanTable(table, options= {}) {
+console.log(options)
     options.params = options.params || {};
+    if( !options.params.hasOwnProperty('stock_detail') ){
+        options.params.stock_detail = false;
+    }
+    if( !options.params.hasOwnProperty('user_detail') ){
+        options.params.user_detail = false;
+    }
+    if( !options.hasOwnProperty('showreturn') ){
+        options.showreturn = true;
+    }
 
     let filters = {};
 
@@ -250,97 +273,119 @@ function loadLoanTable(table, options= {}) {
         }
     ];
 
-    // Part the stock is associated with
-    col = {
-        field: 'part_item',
-        title: 'Part',
-        visible: true,
-        formatter: function(value, row) {
-            return partDetail(row.stock_detail.part_detail, {
-                thumb: true,
-                link: true,
-                icons: true,
-            });
-        }
-    }
-
-    if (!options.params.ordering) {
-        col['sortable'] = true;
-    }
-
-    columns.push(col);
-
-    // Stock item serial number
-    col = {
-        field: 'quantity',
-        sortName: 'stock',
-        title: 'Stock Item',
-        formatter: function(value, row) {
-            let val;
-
-            // Does the stock have a serial number?
-            if (row.stock_detail.serial && row.stock_detail.quantity === 1) {
-                // If there is a single unit with a serial number, use the serial number
-                val = '# ' + row.stock_detail.serial;
-            } else {
-                // Format floating point numbers with this one weird trick
-                val = formatDecimal(row.quantity);
-
-                if (row.stock_detail.part_detail && row.stock_detail.part_detail.units) {
-                    val += ` ${row.stock_detail.part_detail.units}`;
-                }
+    if(options.params.stock_detail){
+        // Part the stock is associated with
+        col = {
+            field: 'part_item',
+            title: 'Part',
+            visible: true,
+            formatter: function(value, row) {
+                return partDetail(row.stock_detail.part_detail, {
+                    thumb: true,
+                    link: true,
+                    icons: true,
+                });
             }
-
-            return renderLink(val, `/stock/item/${row.stock_detail.pk}/`);
         }
-    }
 
-    if (!options.params.ordering) {
-        col['sortable'] = true;
-    }
-
-    columns.push(col);
-
-
-    col = {
-        field: 'first_name',
-        title: 'First Name',
-        visible: true,
-        formatter: function(value, row) {
-            // noinspection JSUnresolvedReference
-            return row.loan_user_detail.first_name;
+        if (!options.params.ordering) {
+            col['sortable'] = true;
         }
-    }
 
-    if (!options.params.ordering) {
-        col['sortable'] = true;
-    }
+        columns.push(col);
 
-    columns.push(col);
+        // Stock item serial number
+        col = {
+            field: 'quantity',
+            sortName: 'stock',
+            title: 'Stock Item',
+            formatter: function(value, row) {
+                let val;
 
-    col = {
-        field: 'last_name',
-        title: 'Last Name',
-        visible: true,
-        formatter: function(value, row) {
-            // noinspection JSUnresolvedReference
-            return row.loan_user_detail.last_name;
+                // Does the stock have a serial number?
+                if (row.stock_detail.serial && row.stock_detail.quantity === 1) {
+                    // If there is a single unit with a serial number, use the serial number
+                    val = '# ' + row.stock_detail.serial;
+                } else {
+                    // Format floating point numbers with this one weird trick
+                    val = formatDecimal(row.quantity);
+
+                    if (row.stock_detail.part_detail && row.stock_detail.part_detail.units) {
+                        val += ` ${row.stock_detail.part_detail.units}`;
+                    }
+                }
+
+                return renderLink(val, `/stock/item/${row.stock_detail.pk}/`);
+            }
         }
+
+        if (!options.params.ordering) {
+            col['sortable'] = true;
+        }
+
+        columns.push(col);
     }
 
-    if (!options.params.ordering) {
-        col['sortable'] = true;
+    if( options.params.user_detail ){
+        col = {
+            field: 'first_name',
+            title: 'First Name',
+            visible: true,
+            formatter: function(value, row) {
+                // noinspection JSUnresolvedReference
+                return row.loan_user_detail.first_name;
+            }
+        }
+
+        if (!options.params.ordering) {
+            col['sortable'] = true;
+        }
+
+        columns.push(col);
+
+        col = {
+            field: 'last_name',
+            title: 'Last Name',
+            visible: true,
+            formatter: function(value, row) {
+                // noinspection JSUnresolvedReference
+                return row.loan_user_detail.last_name;
+            }
+        }
+
+        if (!options.params.ordering) {
+            col['sortable'] = true;
+        }
+
+        columns.push(col);
+
+        col = {
+            field: 'e-mail',
+            title: 'E-mail',
+            visible: true,
+            formatter: function(value, row) {
+                // noinspection JSUnresolvedReference
+                return row.loan_user_detail.username;
+            }
+        }
+
+        if (!options.params.ordering) {
+            col['sortable'] = true;
+        }
+
+        columns.push(col);
     }
 
-    columns.push(col);
-
+    // Location lent
     col = {
-        field: 'e-mail',
-        title: 'E-mail',
+        field: 'location',
+        title: 'Location Lent',
         visible: true,
-        formatter: function(value, row) {
-            // noinspection JSUnresolvedReference
-            return row.loan_user_detail.username;
+        formatter: function(value) {
+            if (value == null) {
+                return '{% trans Unknown %}';
+            }
+            return shortenString(value);
         }
     }
 
@@ -384,40 +429,28 @@ function loadLoanTable(table, options= {}) {
 
     columns.push(col);
 
-    // Location lent
-    col = {
-        field: 'location',
-        title: 'Location Lent',
-        visible: true,
-        formatter: function(value) {
-            if (value == null) {
-                return '{% trans Unknown %}';
+    if(options.showreturn){
+        // Returned
+        col = {
+            field: 'returned_date',
+            title: 'Returned Date',
+            visible: true,
+            formatter: function(value,row) {
+                if(value){
+                    return renderDate(value);
+                }else{
+                    var bReturn = getReturnButton(row.pk);
+                    return `<div class='btn-group' role='group'>${bReturn}</div>`;
+                }
             }
-            return shortenString(value);
         }
-    }
-
-    if (!options.params.ordering) {
-        col['sortable'] = true;
-    }
-
-    columns.push(col);
-
-    // Returned
-    col = {
-        field: 'returned_date',
-        title: 'Returned Date',
-        visible: true,
-        formatter: function(value) {
-            return renderDate(value);
+   
+        if (!options.params.ordering) {
+            col['sortable'] = true;
         }
+   
+        columns.push(col);
     }
-
-    if (!options.params.ordering) {
-        col['sortable'] = true;
-    }
-
-    columns.push(col);
 
     // Edit button
     col = {
@@ -435,6 +468,7 @@ function loadLoanTable(table, options= {}) {
     // Show the table
     table.inventreeTable({
         url: options.url || '/plugin/loan/api/loansession/', // Hardcoded API endpoint (shouldn't be)
+        
         method: 'get',
         name: 'loan',
         original: options.params,
@@ -446,6 +480,12 @@ function loadLoanTable(table, options= {}) {
         formatNoMatches: function() {
             return '{% trans "No loan sessions found" %}';
         }
+    });
+
+    table.on('click','.return-loan',function() {
+        console.log(this);
+        console.log(this.getAttribute("pk"));
+        returnLoanSession(table,this.getAttribute("pk"));
     });
 
     table.on('click','.edit-loan',function() {
@@ -578,7 +618,6 @@ function loadUserTable(table, options = {}) {
 
     columns.push(col);
 
-    console.log(filters)
     // Show the table
     table.inventreeTable({
         url: options.url || '/plugin/loan/api/loanuser/',
@@ -598,7 +637,7 @@ function loadUserTable(table, options = {}) {
 }
 
 /**
- * Creates a modal to return stock items
+ * Creates a modal to return multiple stock items
  */
 function returnLoanSessions(table, items, options={}) {
     // ID Values of the not returned items
@@ -940,6 +979,7 @@ function loadLoaneeTable(table, options = {}) {
  * Creates a modal to return stock items
  */
 function returnLoanSessions(table, items, options={}) {
+    console.log(table);
     // ID Values of the not returned items
     let id_values = [];
 
@@ -1106,6 +1146,120 @@ function returnLoanSessions(table, items, options={}) {
 }
 
 /**
+ * Creates a modal to return a single stock item via pk value
+ */
+function returnLoanSession(table,item, options={}) {
+    console.log(table);
+    // Beginning of the modal HTML
+    let actionInput = constructField(
+        `returned_date_ret`,
+        {
+            type: 'date',
+            value: moment().format('YYYY-MM-DD'),
+            min_value: item.loan_date,
+            required: true,
+        },
+        {
+            hideLabels: true,
+        }
+    );
+
+    let html = `
+        <table class='table table-striped table-condensed' id='loan-adjust-table'>
+        <thead>
+        <tr>
+            <th>{% trans "Part" %}</th>
+            <th>{% trans "Stock Item" %}</th>
+            <th>{% trans "First Name" %}</th>
+            <th>{% trans "Last Name" %}</th>
+            <th>{% trans "E-mail" %}</th>
+            <th>{% trans "Loan Date" %}</th>
+            <th>{% trans "Due Date" %}</th>
+            <th>{% trans "Return Date" %}</th>
+            <th></th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+            <tr id='loan_session' class='loan-session-row'>
+                <td id='part_ret'></td>
+                <td id='stock_ret'></td>
+                <td id='first_ret'></td>
+                <td id='last_ret'></td>
+                <td id='email_ret'></td>
+                <td id='loandate_ret'></td>
+                <td id='duedate_ret'></td>
+                <td id='returned_date_ret'>${actionInput}</td>
+            </tr>
+         </tbody></table>`;
+
+
+    // URL for the return API
+    const url = '/plugin/loan/api/loansession/return/'; // TODO URL Still should not be hardcoded
+    // Create the form
+    constructForm(url, {
+        method: 'POST',
+        fields: {},
+        preFormContent: html,
+        confirm: true,
+        confirmMessage: '{% trans "Confirm Return" %}',
+        title: '{% trans "Return Stock Item" %}',
+        afterRender: function(fields, opts) {
+            inventreeGet(`/plugin/loan/api/loansession/${item}/?stock_detail=true&user_detail=true`,{},{ // TODO URL, also check search parameters (better way to format?)
+                success: function(data) {
+                    console.log(data); // IT WORKS!!! Build the html to match this.
+                    $('#part_ret').text(data.stock_detail.part_detail.name);
+                    $('#stock_ret').text(data.stock_detail.serial);
+                    $('#first_ret').text(data.loan_user_detail.first_name);
+                    $('#last_ret').text(data.loan_user_detail.last_name);
+                    $('#email_ret').text(data.loan_user_detail.email);
+                    $('#loandate_ret').text(data.loan_date);
+                    $('#duedate_ret').text(data.due_date);
+                }
+            });
+        },
+        onSubmit: function(fields, opts) {
+            // Extract data elements from the form
+            const data = {
+                items: [],
+            };
+            data.items.push({
+                pk: item,
+                returned_date: getFormFieldValue('returned_date_ret',{},opts),
+            });
+
+            inventreePut(
+                url,
+                data,
+                {
+                    method: 'POST',
+                    success: function(response) {
+                        // Hide the modal
+                        $(opts.modal).modal('hide');
+
+                        // Refresh the table
+                        $(table).bootstrapTable('refresh');
+                    },
+                    error: function(xhr) {
+                        switch (xhr.status) {
+                        case 400:
+                            handleFormErrors(xhr.responseJSON, fields, opts);
+                            break;
+                        default:
+                            $(opts.modal).modal('hide');
+                            showApiError(xhr, opts.url);
+                            break;
+                        }
+                    }
+                }
+            );
+        },
+        onSuccess: function(response, opts) {
+            console.log("Success");
+        }
+    });
+}
+/**
  * Returns the html for a edit button (templated from notification.js)
  *
  * arguments:
@@ -1116,3 +1270,39 @@ function getLoanEditButton(pk) {
     
     return `<button title={% trans "Edit Loan" %} class='edit-loan btn btn-smbtn-outline-secondary float-left' type='button' pk='${pk}' target='loanedit'><span class='${bIcon}'></span></button>`;
 }
+
+/**
+ * Returns the html for a loan return button (templated from notification.js)
+ *
+ * arguments:
+ * pk: primary key of the loan session
+**/
+function getReturnButton(pk) {
+    let bIcon = 'fas fa-pen-square';
+    
+    return `<button type='button' class='return-loan btn btn-success' id='loan-return' pk='${pk}'} target='loanreturn'>
+                <span class='fas fa-share-square'></span> {% trans "Return" %}
+            </button>`;
+}
+
+/**
+ * Check if script is loaded from a stock item page. If so, load tracking 
+ * loan tracking information into "Loaning" panel
+**/
+
+{% if item %} // probably a better way to do this... `item` exists on stock pages and not loan pages.
+              // use this to differentiate which page this script is loaded on.
+    $(document).ready(function(){
+        loadLoanTable($('#stockitem-table'),{
+                params: {
+                    stock: {{ item.pk }},
+                    stock_detail: false,
+                    user_detail: true,
+                    ordering: '-due_date'
+                }
+        });
+        $('#loan-create').click(function() {
+            createNewLoanSession({table:'#stockitem-table'},{stock:'{{ item.pk }}'});
+        });
+    });
+{% endif %}

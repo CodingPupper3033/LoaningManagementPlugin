@@ -89,11 +89,50 @@ class LoanSessionList(LoanSessionMixin, APIDownloadMixin, ListCreateAPI):
         return self.serializer_class(*args, **kwargs)
 
 
+class LoanSessionStockItem(LoanSessionMixin, APIDownloadMixin, ListCreateAPI):
+    """
+    API endpoint for accessing a list of LoanSession objects, or creating a new LoanSession instance
+    """
+    filterset_class = LoanSessionFilter
+    filter_backends = SEARCH_ORDER_FILTER_ALIAS
+    lookup_field="stock"
+
+    def download_queryset(self, queryset, export_format):
+        # TODO - Implement this
+        raise NotImplementedError("Implement sometime maybe so we can download the table")
+
+    def get_serializer(self, *args, **kwargs):
+        try:
+            params = self.request.query_params
+
+            for key in ['stock_detail', 'user_detail']:
+                kwargs[key] = str2bool(params.get(key, False))
+        except AttributeError:
+            pass
+
+        kwargs['context'] = self.get_serializer_context()
+
+        return self.serializer_class(*args, **kwargs)
 
 class LoanSessionDetail(LoanSessionMixin, RetrieveUpdateDestroyAPI):
     """API endpoint for detail view of a single LoanSession object."""
-    pass
+    def get_serializer(self, *args, **kwargs):
+        try:
+            params = self.request.query_params
 
+            for key in ['stock_detail', 'user_detail']:
+                kwargs[key] = str2bool(params.get(key, False))
+        except AttributeError:
+            pass
+
+        kwargs['context'] = self.get_serializer_context()
+
+        return self.serializer_class(*args, **kwargs)
+
+#class LoanSessionStockItem(LoanSessionMixin, RetrieveUpdateDestroyAPI):
+#    """API endpoint for detail view of all LoanSession objects for a single Stock Item."""
+#    lookup_field="stock"
+#    pass
 
 class LoanSessionAdjustView(CreateAPI):
     """A generic class for handling loan session actions.
@@ -220,6 +259,9 @@ class LoaneeList(LoaneeMixin, APIDownloadMixin, ListCreateAPI):
 loan_session_api_urls = [
     path(r'<int:pk>/', include([
         re_path(r'^.*$', LoanSessionDetail.as_view(), name='api-loan-session-detail')
+    ])),
+    path(r'stock/<int:stock>/', include([
+        re_path(r'^.*$', LoanSessionStockItem.as_view(), name='api-loan-session-stockitem')
     ])),
     re_path(r'^return/', LoanSessionReturn.as_view(), name='api-loan-session-return'),
     re_path(r'^.*$', LoanSessionList.as_view(), name='api-loan-session-list'),

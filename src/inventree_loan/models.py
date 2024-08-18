@@ -14,8 +14,8 @@ class LoanSession(models.Model):
     @staticmethod
     def get_api_url():
         """Return API url."""
-#        return '/plugin/loan/api/loansession/'
-        return reverse('api-loansession-list')
+        return '/plugin/loan/api/loansession/'
+#        return reverse('api-loan-session-list')  #TODO: Figure out why this doesn't work
 
     class Meta:
         app_label = "inventree_loan"
