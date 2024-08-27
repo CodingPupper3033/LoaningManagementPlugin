@@ -24,6 +24,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
     DESCRIPTION = "A plugin to manage loaning and tracking stock items."
     VERSION = "2024-06-04"
     AUTHOR = "Joshua Miller, Kyle Wilt @ RPI"
+    ROLE = "sales_order"
 
     # Navigation
     NAVIGATION_TAB_NAME = "Loan"
@@ -33,7 +34,8 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
         {
             'name': 'Loan Tracking',
             'link': 'plugin:loan:tracking',
-            'icon': 'fas fa-clock'
+            'icon': 'fas fa-clock',
+            'role': 'sales_order.view',
         },
     ]
         
@@ -64,6 +66,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                 "content_template": "loaning_stats_panel.html",
                 #"javascript_template": "js/track.js",
                 "javascript_template": "js/loan.js",
+                "role": LoanPlugin.ROLE,
             })
 
         return panels
