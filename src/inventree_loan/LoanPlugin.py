@@ -14,6 +14,9 @@ from stock.models import StockItem
 from plugin.mixins import AppMixin, NavigationMixin, SettingsMixin, UrlsMixin, ActionMixin, PanelMixin
 from stock.views import StockItemDetail
 
+
+logger = logging.getLogger('inventree')
+
 class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixin, PanelMixin,InvenTreePlugin):
     """Main plugin class for loaning capabilities."""
 
@@ -50,8 +53,21 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                 MinValueValidator(0)
             ]
         },
+        'USER_LOOKUP_API': {
+            'name': _('User Lookup API URL'),
+            'description': _("Internal API for loan user lookup. This is expected to be provided by a corresponding plugin. Alternatively, this plugin could be modified to use the APICallMixin to directly interface with an external server."),
+            'default': ""
+        },
     }
-            
+    
+    # Get user lookup api, if it exists
+    @property
+    def userlookup_api_url(self):
+        #if self.get_setting("USER_LOOKUP_API"):
+        #    return "{}".format(self.get_setting("USER_LOOKUP_API"))
+        #return False
+        return "{}".format(self.get_setting("USER_LOOKUP_API"))
+
     # Custom Panels
     STOCK_ITEM_LOAN_PANEL_TITLE = "Loan History"
     
@@ -67,6 +83,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                 #"javascript_template": "js/track.js",
                 "javascript_template": "js/loan.js",
                 "role": LoanPlugin.ROLE,
+                "badge_api":LoanPlugin.userlookup_api_url,
             })
 
         return panels

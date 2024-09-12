@@ -102,3 +102,10 @@ class LoanSession(models.Model):
 
         return True
 
+    # Testing, trying to add a fake field. Didn't work (didn't run migrations though)
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self.user_badge = models.CharField(
+            verbose_name = _('User Badge'),
+        )           
+

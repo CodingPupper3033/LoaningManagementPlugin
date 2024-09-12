@@ -28,14 +28,14 @@ function loanSessionFields() {
         },
         loan_user: {
             model: 'user',
+            label: 'Loanee',
             icon: 'fa-user',
-/*
-            secondary: {
-                title: 'Add User',
-                api_url: '/plugin/loan/api/loanuser/', // API endpoint for creating a new LoanUser - Shouldn't be hardcoded
-                fields: loanUserFields()
-            },
-*/
+           // secondary: {
+           //     title: 'Search User',
+           //     api_url: '/plugin/loan/api/loanuser/', // API endpoint for creating a new LoanUser - Shouldn't be hardcoded
+           //     fields: loanUserFields()
+           // },
+
             help_text: '{% trans "User to loan the stock item to" %}',
         },
         quantity: {
@@ -81,6 +81,46 @@ function createNewLoanSession(options = {},defaults = {}) {
             options.fields[key].value = defaults[key]});
     }
     
+    options.afterRender = function(fields,options) {
+        userlookup_api_url = '{{ userlookup_api_url }}' || '{{ plugin.userlookup_api_url }}'
+        if(userlookup_api_url){
+            // disable enter from submitting the form.
+            // disable previous keydown that enabled form submission with enter
+            $(options.modal).off('keydown');
+            // disable enter keydown on form.
+            $(options.modal).on('keydown','input', function(e) {
+                if(e.keyCode == 13) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            // Add a field to serve as badge scanner...
+            $('#div_id_loan_user').eq(0).before(
+                constructField('user_badge',{
+                    label : "User Badge",
+                    required : false,
+                    help_text : "Scan user ID here",
+                    type : "string",
+                }));
+            // Now add callback from enter press on user badge to trigger user lookup
+            $('#id_user_badge').keydown(function(e) {
+                if(e.keyCode == 13) {
+                    if($('#id_user_badge').val().length == 8){
+                        inventreeGet(
+                            userlookup_api_url+$('#id_user_badge').val()+'/',
+                            {}, {
+                            success: function(data) {
+                                setRelatedFieldData('loan_user',data,{});
+                            }});
+
+                    }
+                }
+            });
+        }
+       
+    }
+
+
     options.onSuccess = function(respose) {
         // Set the table to refresh
         var table = options.table || '#loan-table';
@@ -189,7 +229,6 @@ function makeLoanActions(table) {
  * - disableFilters: Disable the filters for the table
  */
 function loadLoanTable(table, options= {}) {
-console.log(options)
     options.params = options.params || {};
     if( !options.params.hasOwnProperty('stock_detail') ){
         options.params.stock_detail = false;
@@ -439,6 +478,9 @@ console.log(options)
                 if(value){
                     return renderDate(value);
                 }else{
+                    if(options.loan_button) {
+                        $(options.loan_button).attr('disabled',true);
+                    }
                     var bReturn = getReturnButton(row.pk);
                     return `<div class='btn-group' role='group'>${bReturn}</div>`;
                 }
@@ -483,15 +525,11 @@ console.log(options)
     });
 
     table.on('click','.return-loan',function() {
-        console.log(this);
-        console.log(this.getAttribute("pk"));
         returnLoanSession(table,this.getAttribute("pk"));
     });
 
     table.on('click','.edit-loan',function() {
-        //window.alert({$(this).pk});
-        console.log(this);
-        console.log(this.getAttribute("pk"));
+        window.alert("Edit loan functionality not implemented yet!");
     });
 }
 
@@ -979,7 +1017,6 @@ function loadLoaneeTable(table, options = {}) {
  * Creates a modal to return stock items
  */
 function returnLoanSessions(table, items, options={}) {
-    console.log(table);
     // ID Values of the not returned items
     let id_values = [];
 
@@ -1149,7 +1186,6 @@ function returnLoanSessions(table, items, options={}) {
  * Creates a modal to return a single stock item via pk value
  */
 function returnLoanSession(table,item, options={}) {
-    console.log(table);
     // Beginning of the modal HTML
     let actionInput = constructField(
         `returned_date_ret`,
@@ -1207,7 +1243,6 @@ function returnLoanSession(table,item, options={}) {
         afterRender: function(fields, opts) {
             inventreeGet(`/plugin/loan/api/loansession/${item}/?stock_detail=true&user_detail=true`,{},{ // TODO URL, also check search parameters (better way to format?)
                 success: function(data) {
-                    console.log(data); // IT WORKS!!! Build the html to match this.
                     $('#part_ret').text(data.stock_detail.part_detail.name);
                     $('#stock_ret').text(data.stock_detail.serial);
                     $('#first_ret').text(data.loan_user_detail.first_name);
@@ -1299,10 +1334,12 @@ function getReturnButton(pk) {
                     stock_detail: false,
                     user_detail: true,
                     ordering: '-due_date'
-                }
+                },
+                loan_button: '#loan-create', 
         });
         $('#loan-create').click(function() {
             createNewLoanSession({table:'#stockitem-table'},{stock:'{{ item.pk }}'});
         });
     });
+
 {% endif %}

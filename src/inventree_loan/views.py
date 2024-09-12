@@ -4,6 +4,7 @@ from django.views.generic import ListView
 from django.contrib.auth import get_user_model
 
 from .models import LoanSession
+from .LoanPlugin import LoanPlugin
 
 
 """Is this class needed anymore now that there is no LoanUser?"""
@@ -35,5 +36,6 @@ class LoanTrackingDetail(ListView):
         context['overdue_count'] = LoanSession.objects.filter(LoanSession.OVERDUE_FILTER).count()
         context['current_count'] = LoanSession.objects.filter(LoanSession.CURRENT_FILTER).count()
         context['returned_count'] = LoanSession.objects.filter(returned=True).count()
+        context['userlookup_api_url'] = LoanPlugin().userlookup_api_url
 
         return context
