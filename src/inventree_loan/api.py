@@ -5,7 +5,8 @@ from django_filters import rest_framework as rest_filters
 from django.contrib.auth import get_user_model
 
 from InvenTree.mixins import (CreateAPI, ListCreateAPI, RetrieveUpdateDestroyAPI)
-from InvenTree.api import APIDownloadMixin, ListCreateDestroyAPIView
+#from InvenTree.api import APIDownloadMixin, ListCreateDestroyAPIView
+from InvenTree.api import ListCreateDestroyAPIView
 from .models import LoanSession
 from .serializers import (LoanSessionSerializer, LoanUserSerializer, LoanSessionReturnSerializer, LoaneeSerializer)
 
@@ -64,7 +65,7 @@ class LoanSessionMixin:
     permission_classes = [permissions.IsAuthenticated]  # TODO: Only work with proper permissions (and test)
 
 
-class LoanSessionList(LoanSessionMixin, APIDownloadMixin, ListCreateAPI):
+class LoanSessionList(LoanSessionMixin, ListCreateAPI):
     """
     API endpoint for accessing a list of LoanSession objects, or creating a new LoanSession instance
     """
@@ -89,7 +90,7 @@ class LoanSessionList(LoanSessionMixin, APIDownloadMixin, ListCreateAPI):
         return self.serializer_class(*args, **kwargs)
 
 
-class LoanSessionStockItem(LoanSessionMixin, APIDownloadMixin, ListCreateAPI):
+class LoanSessionStockItem(LoanSessionMixin, ListCreateAPI):
     """
     API endpoint for accessing a list of LoanSession objects, or creating a new LoanSession instance
     """
@@ -220,7 +221,7 @@ class LoaneeMixin:
     serializer_class = LoaneeSerializer
     queryset = get_user_model().objects.all()
 
-class LoaneeList(LoaneeMixin, APIDownloadMixin, ListCreateAPI):
+class LoaneeList(LoaneeMixin, ListCreateAPI):
     """
     API endpoint for accessing a list of Loanees
     """
