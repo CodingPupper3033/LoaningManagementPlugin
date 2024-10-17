@@ -133,25 +133,6 @@ function createNewLoanSession(options = {},defaults = {}) {
     constructForm(url, options);
 }
 
-// noinspection JSUnusedGlobalSymbols
-/**
- * Launches a modal form to create a LoanUser
- */
-function createNewLoanUser(options = {}) {
-    const url = '/plugin/loan/api/loanuser/'; // API endpoint for creating a new LoanUser - Shouldn't be hardcoded
-
-    options.title = '{% trans "Loan User Item" %}';
-
-    options.method = 'POST';
-
-    options.create = true;
-
-    // Fields for the form
-    options.fields = loanUserFields(options);
-
-    constructForm(url, options);
-}
-
 /**
  * Removes all filters from the table and sets the given filter to filterValue, removes it if it already is set.
  * @param table
