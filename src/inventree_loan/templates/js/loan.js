@@ -52,7 +52,8 @@ function loanSessionFields() {
         },
         location: {
             icon: 'fa-clipboard',
-            help_text: '{% trans "Optionally, enter the name of the location the item will be loaned to" %}',
+            label: 'Purpose and/or Location'
+            help_text: '{% trans "Optionally, enter the reason for the loan or enter the name of the location the item will be loaned to " %}',
         }
     };
 }
