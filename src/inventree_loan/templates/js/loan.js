@@ -63,6 +63,7 @@ function loanSessionFields() {
  * defaults: a list of default values for fields, as desired.
  * @see LoanSessionList
  */
+var handlinginprogress = false;
 function createNewLoanSession(options = {},defaults = {}) {
     const url = '/plugin/loan/api/loansession/'; // API endpoint for creating a new LoanSession - Shouldn't be hardcoded
 
@@ -97,25 +98,27 @@ function createNewLoanSession(options = {},defaults = {}) {
             // Add a field to serve as badge scanner...
             $('#div_id_loan_user').eq(0).before(
                 constructField('user_badge',{
-                    label : "User Badge",
+                    label : "User ID or Badge",
                     required : false,
-                    help_text : "Scan user ID here",
+                    help_text : "Enter user ID here and press Enter OR Scan user ID here",
                     type : "string",
                 }));
             // Now add callback from enter press on user badge to trigger user lookup
             $('#id_user_badge').keydown(function(e) {
                 if(e.keyCode == 13) {
-                    if($('#id_user_badge').val().length == 8){
+                   // if($('#id_user_badge').val().length == 8){ // validation of ID length
                         inventreeGet(
                             userlookup_api_url+$('#id_user_badge').val()+'/',
                             {}, {
                             success: function(data) {
+                                console.log(data);
                                 setRelatedFieldData('loan_user',data,{});
                             }});
 
-                    }
+                   // }
                 }
             });
+            //$('#id_loan_user').prop('disabled',true);
         }
        
     }
