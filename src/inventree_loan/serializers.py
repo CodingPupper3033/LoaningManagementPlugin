@@ -95,12 +95,6 @@ class LoanSessionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Stock item is already loaned out")
         return value
 
-    @staticmethod
-    def validate_loan_user(value):
-        logger.warning(value)
-        
-        raise serializers.ValidationError("This is a test: {}".format(value))
-
     class Meta:
         from .models import LoanSession
 #        app_label = "LoanPlugin"
