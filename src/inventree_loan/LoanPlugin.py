@@ -69,7 +69,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
         return "{}".format(self.get_setting("USER_LOOKUP_API"))
 
     # Custom Panels
-    STOCK_ITEM_LOAN_PANEL_TITLE = "Loan History"
+    STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
     
     def get_custom_panels(self, view, request):
         panels = []

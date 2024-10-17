@@ -39,6 +39,10 @@ class LoanSession(models.Model):
         loan_date__lte=get_end_of_day()
     )
 
+    RETURNED_FILTER = Q(
+        returned=True
+    )
+
     stock = models.ForeignKey(
         "stock.StockItem",
         on_delete=models.CASCADE

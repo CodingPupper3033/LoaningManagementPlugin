@@ -52,7 +52,7 @@ function loanSessionFields() {
         },
         location: {
             icon: 'fa-clipboard',
-            label: 'Purpose and/or Location'
+            label: 'Purpose and/or Location',
             help_text: '{% trans "Optionally, enter the reason for the loan or enter the name of the location the item will be loaned to " %}',
         }
     };
@@ -781,7 +781,6 @@ function loadLoaneeTable(table, options = {}) {
 
     columns.push(col);
 
-
     // Total items out
     col = {
         field: 'loaned',
@@ -800,6 +799,20 @@ function loadLoaneeTable(table, options = {}) {
     col = {
         field: 'overdue',
         title: 'Overdue',
+        visible: true,
+        searchable: true,
+    }
+
+    if (!options.params.ordering) {
+        col['sortable'] = true;
+    }
+
+    columns.push(col);
+
+    // Returned items
+    col = {
+        field: 'returned',
+        title: 'Returned',
         visible: true,
         searchable: true,
     }

@@ -176,10 +176,12 @@ class LoaneeSerializer(serializers.ModelSerializer):
 
     loaned = serializers.IntegerField(read_only=True, label=_('Loaned'))
     overdue = serializers.IntegerField(read_only=True, label=_('Overdue'))
+    returned = serializers.IntegerField(read_only=True, label=_('Returned'))
+    total = serializers.IntegerField(read_only=True, label=_('Total'))
 
     class Meta:
         from django.contrib.auth import get_user_model
-        fields = ('pk', 'first_name', 'last_name', 'email', 'username','loaned','overdue')
+        fields = ('pk', 'first_name', 'last_name', 'email', 'username','loaned','overdue','returned','total')
         model = get_user_model()
 
     def __init__(self, *args, **kwargs):
@@ -194,29 +196,43 @@ class LoaneeSerializer(serializers.ModelSerializer):
     def annotate_queryset(queryset):
         """Annotate the items loaned into the queryset."""
         queryset = queryset.annotate(
-            loaned= annotate_loanee_items(overdue=False),
-            overdue= annotate_loanee_items(overdue=True)
+            loaned= annotate_loanee_items(status='current'),
+            overdue= annotate_loanee_items(status='overdue'),
+            returned= annotate_loanee_items(status='returned'),
+            total=annotate_loanee_items()
         )
-        queryset = queryset.exclude(loaned=0)
+        queryset = queryset.exclude(total=0)
         return queryset
         
 
 
 
 """ This are based on annotate_location_items() from stock/filters.py """
-def annotate_loanee_items(overdue=False):
+def annotate_loanee_items(status=None):
     """Construct a queryset annotation which returns the number of loaned utems to a particular user."""
 
     # Construct a subquery to provide all items loaned by a specific user
-    if overdue:
+    if status == 'overdue':
         subquery = LoanSession.objects.all().filter(
             LoanSession.OVERDUE_FILTER,
             loan_user=OuterRef('pk')
         )
-    else:
+    elif status == 'current':
+        subquery = LoanSession.objects.all().filter(
+            LoanSession.CURRENT_FILTER,
+            loan_user=OuterRef('pk')
+        )
+    elif status == 'returned':
+        subquery = LoanSession.objects.all().filter(
+            LoanSession.RETURNED_FILTER,
+            loan_user=OuterRef('pk')
+        )
+    else: #total
         subquery = LoanSession.objects.all().filter(
             loan_user=OuterRef('pk')
         )
+
+    
 
     return Coalesce(
         Subquery(

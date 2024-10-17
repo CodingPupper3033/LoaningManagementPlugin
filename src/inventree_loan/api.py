@@ -252,6 +252,7 @@ class LoaneeList(LoaneeMixin, ListCreateAPI):
         'email',
         'loaned',
         'overdue',
+        'returned',
     ]
 
     ordering = ['email']
