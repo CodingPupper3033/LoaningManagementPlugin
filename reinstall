@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+pip uninstall inventree_loan -y
+rm -r src/inventree_loan.egg-info
+pip install --editable .
+inventree run invoke server -a 0.0.0.0:8000
