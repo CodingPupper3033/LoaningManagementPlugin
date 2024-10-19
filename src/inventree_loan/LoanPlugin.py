@@ -25,7 +25,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
     SLUG = "loan"
     TITLE = "Loan Management"
     DESCRIPTION = "A plugin to manage loaning and tracking stock items."
-    VERSION = "2024-10-17"
+    VERSION = "2024-10-19"
     AUTHOR = "Joshua Miller, Kyle Wilt @ RPI"
     ROLE = "sales_order"
 

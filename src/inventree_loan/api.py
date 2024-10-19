@@ -17,6 +17,7 @@ from InvenTree.helpers import str2bool
 class LoanSessionFilter(django_filters.FilterSet):
     """
     Allow filtering LoanSessions by:
+        email: sessions by user email
         overdue: session is past due and not returned
         current: session is currently loaned and not overdue
         returned: session has been returned
@@ -26,7 +27,7 @@ class LoanSessionFilter(django_filters.FilterSet):
     class Meta:
         model = LoanSession  # Django model to filter for
 
-        fields = ['quantity', 'stock']
+        fields = ['quantity', 'stock','loan_user__id']#,a'loan_user__email']
 
     # Loan Session 'State' filters
     overdue = rest_filters.BooleanFilter(label='Overdue', method='filter_overdue')
@@ -52,6 +53,8 @@ class LoanSessionFilter(django_filters.FilterSet):
             return queryset.exclude(LoanSession.CURRENT_FILTER).order_by('due_date')
 
     returned = rest_filters.BooleanFilter(label='returned')
+
+    email = rest_filters.CharFilter(label='E-mail',field_name='loan_user__email',lookup_expr='iexact')
 
 
 class LoanSessionMixin:

@@ -232,7 +232,7 @@ function loadLoanTable(table, options= {}) {
         const filterKey = options["filterKey"] || options.name || 'loan';
 
         // Add the overdue/current/returned filters. Also, reload the table when these filters are executed. This is a work-around for not being able to implement default filters for custom plugin tables
-        let filterOptions = {
+        var filterOptions = {
             download: false, // TODO add download functionality in the api
             singular_name: '{% trans "loan session" %}',
             plural_name: '{% trans "loan sessions" %}',
@@ -389,7 +389,11 @@ function loadLoanTable(table, options= {}) {
             visible: true,
             formatter: function(value, row) {
                 // noinspection JSUnresolvedReference
-                return row.loan_user_detail.username;
+                if (options.disableFilters) {
+                    return row.loan_user_detail.username;
+                }else{
+                    return `<a id="user_email" title="Filter loans by this user" href="#" email=${row.loan_user_detail.username}>${row.loan_user_detail.username}</a>`;
+                }
             }
         }
 
@@ -405,16 +409,13 @@ function loadLoanTable(table, options= {}) {
         field: 'location',
         title: 'Location Lent',
         visible: true,
+        sortable: false,
         formatter: function(value) {
             if (value == null) {
                 return '{% trans Unknown %}';
             }
             return shortenString(value);
         }
-    }
-
-    if (!options.params.ordering) {
-        col['sortable'] = true;
     }
 
     columns.push(col);
@@ -484,12 +485,12 @@ function loadLoanTable(table, options= {}) {
         field: 'edit',
         title: '',
         visible: true,
+        sortable: false,
         formatter: function(value,row){
             var bEdit = getLoanEditButton(row.pk);
             return `<div class='btn-group float-right' role='group'>${bEdit}</div>`;
         }
     }
-    col['sortable'] = false;
     columns.push(col);
 
     // Show the table
@@ -508,6 +509,14 @@ function loadLoanTable(table, options= {}) {
             return '{% trans "No loan sessions found" %}';
         }
     });
+
+    if (!options.disableFilters) {
+        table.on('click','#user_email',function() {
+            var filters = addTableFilter('loan','email',this.getAttribute("email"));
+            reloadTableFilters(table,filters,{});
+            setupFilterList('loan',table,"#filter-list-loan",filterOptions);
+        });
+    }
 
     table.on('click','.return-loan',function() {
         returnLoanSession(table,this.getAttribute("pk"));
@@ -773,6 +782,9 @@ function loadLoaneeTable(table, options = {}) {
         title: 'Email',
         visible: true,
         searchable: true,
+        formatter: function(value) {
+            return `<a id="user_email" title="Show all loans by this user" href="#" email=${value}>${value}</a>`;
+        }
     }
 
     if (!options.params.ordering) {
@@ -866,6 +878,13 @@ function loadLoaneeTable(table, options = {}) {
         formatNoMatches: function() {
             return '{% trans "No active loans" %}';
         }
+    });
+
+    table.on('click','#user_email',function() {
+        var filters = addTableFilter('loan','email',this.getAttribute("email"));
+        reloadTableFilters($('#loan-table'),filters,{});
+        setupFilterList('loan',$('#loan-table'),"#filter-list-loan",{});
+        $('#select-loan').trigger('click'); // move to the correct panel
     });
 
 }
@@ -1192,6 +1211,7 @@ function getReturnButton(pk) {
                     user_detail: true,
                     ordering: '-due_date'
                 },
+                disableFilters: true,
                 loan_button: '#loan-create', 
         });
         $('#loan-create').click(function() {
