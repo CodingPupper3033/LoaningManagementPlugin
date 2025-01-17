@@ -398,9 +398,9 @@ console.log(options.params);
             formatter: function(value, row) {
                 // noinspection JSUnresolvedReference
                 if (options.disableFilters) {
-                    return row.loan_user_detail.username;
+                    return row.loan_user_detail.email;
                 }else{
-                    return `<a id="user_email" title="Filter loans by this user" href="#" email=${row.loan_user_detail.username}>${row.loan_user_detail.username}</a>`;
+                    return `<a id="user_email" title="Filter loans by this user" href="#" email=${row.loan_user_detail.email}>${row.loan_user_detail.email}</a>`;
                 }
             }
         }
@@ -498,9 +498,9 @@ console.log(options.params);
                 console.log(row)
                 // noinspection JSUnresolvedReference
                 if (options.disableFilters) {
-                    return row.loaner_detail.username;
+                    return row.loaner_detail.email;
                 }else{
-                    return `<a id="loaner_email" title="${row.loaner_detail.first_name} ${row.loaner_detail.last_name}" href="#" email=${row.loan_user_detail.username}>${row.loaner_detail.username}</a>`;
+                    return `<a id="loaner_id" title="${row.loaner_detail.first_name} ${row.loaner_detail.last_name} : ${row.loaner_detail.email} -  Click to e-mail" href="mailto:${row.loaner_detail.email}">${row.loaner_detail.username}</a>`;
                 }
             }
         }
@@ -635,7 +635,7 @@ function returnLoanSessions(table, items, options={}) {
             <tr id='loan_session_${pk}' class='loan-session-row'>
                 <td id='part_${pk}'>${thumb} ${part_detail.full_name}</td>
                 <td id='stock_${pk}'>${serial_column}</td>
-                <td id='user_${pk}'>${item.loan_user_detail.username}</td>
+                <td id='user_${pk}'>${item.loan_user_detail.email}</td>
                 <td id='returned_date_${pk}'>${actionInput}</td>
                 <td id='buttons_${pk}'>${buttons}</td>
             </tr>`;
@@ -997,7 +997,7 @@ function returnLoanSessions(table, items, options={}) {
             <tr id='loan_session_${pk}' class='loan-session-row'>
                 <td id='part_${pk}'>${thumb} ${part_detail.full_name}</td>
                 <td id='stock_${pk}'>${serial_column}</td>
-                <td id='user_${pk}'>${item.loan_user_detail.username}</td>
+                <td id='user_${pk}'>${item.loan_user_detail.email}</td>
                 <td id='returned_date_${pk}'>${actionInput}</td>
                 <td id='buttons_${pk}'>${buttons}</td>
             </tr>`;

@@ -25,7 +25,7 @@ class LoanUserSerializer(serializers.ModelSerializer):
     """Serialize Loan Users"""
 
     # The username will be the same as the email. This is so that a loan user can be rendered as an InvenTree user in modals.
-    username = serializers.SerializerMethodField()
+    # username = serializers.SerializerMethodField()
 
     @staticmethod
     def get_username(obj):
@@ -59,7 +59,7 @@ class LoanUserBriefSerializer(serializers.ModelSerializer):
     """
 
     # The username will be the same as the email. This is so that a loan user can be rendered the same as an InvenTree user in forms.
-    username = serializers.SerializerMethodField()
+    # username = serializers.SerializerMethodField()
 
     @staticmethod
     def get_username(obj):
