@@ -112,7 +112,6 @@ function createNewLoanSession(options = {},defaults = {}) {
                             userlookup_api_url+$('#id_user_badge').val()+'/',
                             {}, {
                             success: function(data) {
-                                console.log(data);
                                 setRelatedFieldData('loan_user',data,{});
                             }});
 
@@ -123,7 +122,13 @@ function createNewLoanSession(options = {},defaults = {}) {
             $('#hint_id_loan_user').html("<i>User to loan the stock item to. <b>This field is auto-populated from above field</b></i>"); 
             $('#id_loan_user').prop('disabled',true);
             // Auto populate the Loaned-By field using the signed in username
-            // TODO: This.
+            let dat_loaner = {username: "{{ user.username }}",
+                              first_name: "{{ user.first_name }}",
+                              last_name: "{{ user.last_name }}",
+                              email: "{{ user.email }}",
+                              pk: "{{ user.pk }}"
+            };
+            setRelatedFieldData('loaner',dat_loaner,{});
         }
        
     }
@@ -231,7 +236,6 @@ function loadLoanTable(table, options= {}) {
     if( !options.hasOwnProperty('showreturn') ){
         options.showreturn = true;
     }
-console.log(options.params);
 
     let filters = {};
 
@@ -495,7 +499,6 @@ console.log(options.params);
             title: 'Loaned By',
             visible: true,
             formatter: function(value, row) {
-                console.log(row)
                 // noinspection JSUnresolvedReference
                 if (options.disableFilters) {
                     return row.loaner_detail.email;
@@ -1253,3 +1256,4 @@ function getReturnButton(pk) {
     });
 
 {% endif %}
+
