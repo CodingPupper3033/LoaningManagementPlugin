@@ -85,6 +85,7 @@ class LoanSessionSerializer(serializers.ModelSerializer):
     stock_detail = StockItemSerializer(source='stock', many=False, read_only=True, part_detail=True)
 
     loan_user_detail = LoanUserBriefSerializer(source='loan_user', many=False, read_only=True)
+    loaner_detail = LoanUserBriefSerializer(source='loaner', many=False, read_only=True)
 
     # TODO: Add a validator that checks that there is enough of the stock to loan out, not just was it already loaned out
     @staticmethod
@@ -100,13 +101,14 @@ class LoanSessionSerializer(serializers.ModelSerializer):
 #        app_label = "LoanPlugin"
         fields = (
             'pk', 'stock', 'quantity', 'loan_date', 'due_date', 'returned', 'returned_date', 'loan_user',
-            'location', 'stock_detail', 'loan_user_detail')
+            'location', 'stock_detail', 'loan_user_detail','loaner','loaner_detail')
         model = LoanSession
 
     def __init__(self, *args, **kwargs):
         # Don't pass the 'fields' arg up to the superclass
         stock_detail = kwargs.pop('stock_detail', False)
         user_detail = kwargs.pop('user_detail', False)
+        loaner_detail = kwargs.pop('loaner_detail', False)
 
         # Instantiate the superclass normally
         super().__init__(*args, **kwargs)
@@ -116,6 +118,9 @@ class LoanSessionSerializer(serializers.ModelSerializer):
 
         if not user_detail:
             self.fields.pop('loan_user_detail')
+
+        if not loaner_detail:
+            self.fields.pop('loaner_detail')
 
 
 class LoanSessionReturnItemSerializer(serializers.Serializer):

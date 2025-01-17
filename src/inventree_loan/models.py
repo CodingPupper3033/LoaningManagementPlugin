@@ -36,7 +36,7 @@ class LoanSession(models.Model):
     CURRENT_FILTER = Q(
         returned=False,
         due_date__gte=get_end_of_day(),
-        loan_date__lte=get_end_of_day()
+        #loan_date__lte=get_end_of_day()
     )
 
     RETURNED_FILTER = Q(
@@ -89,6 +89,13 @@ class LoanSession(models.Model):
         verbose_name=_('Notes'),
         null=True,
         blank=True
+    )
+
+    loaner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        default=1 # TODO: This is bad form in case user with pk=1 is deleted. Fix me eventually
+
     )
 
     @transaction.atomic

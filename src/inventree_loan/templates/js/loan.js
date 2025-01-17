@@ -30,12 +30,6 @@ function loanSessionFields() {
             model: 'user',
             label: 'Loanee',
             icon: 'fa-user',
-           // secondary: {
-           //     title: 'Search User',
-           //     api_url: '/plugin/loan/api/loanuser/', // API endpoint for creating a new LoanUser - Shouldn't be hardcoded
-           //     fields: loanUserFields()
-           // },
-
             help_text: '{% trans "User to loan the stock item to" %}',
         },
         quantity: {
@@ -54,7 +48,13 @@ function loanSessionFields() {
             icon: 'fa-clipboard',
             label: 'Purpose and/or Location',
             help_text: '{% trans "Optionally, enter the reason for the loan or enter the name of the location the item will be loaned to " %}',
-        }
+        },
+        loaner: {
+            model: 'user',
+            label: 'Loaned By',
+            icon: 'fa-user',
+            help_text: '{% trans "Staff user who is creating the loan (you)" %}',
+        },
     };
 }
 
@@ -119,8 +119,11 @@ function createNewLoanSession(options = {},defaults = {}) {
                    // }
                 }
             });
+            // Modify hint on loanee field to indicate that it is autopopulated and disable the field
             $('#hint_id_loan_user').html("<i>User to loan the stock item to. <b>This field is auto-populated from above field</b></i>"); 
             $('#id_loan_user').prop('disabled',true);
+            // Auto populate the Loaned-By field using the signed in username
+            // TODO: This.
         }
        
     }
@@ -222,9 +225,13 @@ function loadLoanTable(table, options= {}) {
     if( !options.params.hasOwnProperty('user_detail') ){
         options.params.user_detail = false;
     }
+    if( !options.params.hasOwnProperty('loaner_detail') ){
+        options.params.loaner_detail = false;
+    }
     if( !options.hasOwnProperty('showreturn') ){
         options.showreturn = true;
     }
+console.log(options.params);
 
     let filters = {};
 
@@ -478,6 +485,30 @@ function loadLoanTable(table, options= {}) {
             col['sortable'] = true;
         }
    
+        columns.push(col);
+    }
+
+    // add loaner e-mail column
+    if( options.params.loaner_detail ){
+        col = {
+            field: 'e-mail',
+            title: 'Loaned By',
+            visible: true,
+            formatter: function(value, row) {
+                console.log(row)
+                // noinspection JSUnresolvedReference
+                if (options.disableFilters) {
+                    return row.loaner_detail.username;
+                }else{
+                    return `<a id="loaner_email" title="${row.loaner_detail.first_name} ${row.loaner_detail.last_name}" href="#" email=${row.loan_user_detail.username}>${row.loaner_detail.username}</a>`;
+                }
+            }
+        }
+
+        if (!options.params.ordering) {
+            col['sortable'] = true;
+        }
+
         columns.push(col);
     }
 
@@ -1210,6 +1241,7 @@ function getReturnButton(pk) {
                     stock: {{ item.pk }},
                     stock_detail: false,
                     user_detail: true,
+                    loaner_detail: true,
                     ordering: '-due_date'
                 },
                 disableFilters: true,

@@ -83,7 +83,7 @@ class LoanSessionList(LoanSessionMixin, ListCreateAPI):
         try:
             params = self.request.query_params
 
-            for key in ['stock_detail', 'user_detail']:
+            for key in ['stock_detail', 'user_detail','loaner_detail']:
                 kwargs[key] = str2bool(params.get(key, False))
         except AttributeError:
             pass
@@ -109,7 +109,7 @@ class LoanSessionStockItem(LoanSessionMixin, ListCreateAPI):
         try:
             params = self.request.query_params
 
-            for key in ['stock_detail', 'user_detail']:
+            for key in ['stock_detail', 'user_detail','loaner_detail']:
                 kwargs[key] = str2bool(params.get(key, False))
         except AttributeError:
             pass
@@ -124,7 +124,7 @@ class LoanSessionDetail(LoanSessionMixin, RetrieveUpdateDestroyAPI):
         try:
             params = self.request.query_params
 
-            for key in ['stock_detail', 'user_detail']:
+            for key in ['stock_detail', 'user_detail','loaner_detail']:
                 kwargs[key] = str2bool(params.get(key, False))
         except AttributeError:
             pass
