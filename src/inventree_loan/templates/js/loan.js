@@ -99,9 +99,9 @@ function createNewLoanSession(options = {},defaults = {}) {
             // Add a field to serve as badge scanner...
             $('#div_id_loan_user').eq(0).before(
                 constructField('user_badge',{
-                    label : "User ID or Badge",
+                    label : "Loanee User ID or Badge",
                     required : false,
-                    help_text : "Enter user ID here and press Enter OR Scan user ID here",
+                    help_text : "Enter loanee user ID here and press Enter <b>OR</b> Scan ID card here",
                     type : "string",
                 }));
             // Now add callback from enter press on user badge to trigger user lookup
@@ -119,7 +119,8 @@ function createNewLoanSession(options = {},defaults = {}) {
                    // }
                 }
             });
-            //$('#id_loan_user').prop('disabled',true);
+            $('#hint_id_loan_user').html("<i>User to loan the stock item to. <b>This field is auto-populated from above field</b></i>"); 
+            $('#id_loan_user').prop('disabled',true);
         }
        
     }
@@ -407,7 +408,7 @@ function loadLoanTable(table, options= {}) {
     // Location lent
     col = {
         field: 'location',
-        title: 'Location Lent',
+        title: 'Purpose',
         visible: true,
         sortable: false,
         formatter: function(value) {
