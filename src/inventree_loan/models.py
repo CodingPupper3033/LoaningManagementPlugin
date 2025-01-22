@@ -70,7 +70,7 @@ class LoanSession(models.Model):
     returned_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name=_('Due Date')
+        verbose_name=_('Returned Date')
     )
 
     loan_user = models.ForeignKey(
@@ -96,6 +96,16 @@ class LoanSession(models.Model):
         on_delete=models.CASCADE,
         default=1 # TODO: This is bad form in case user with pk=1 is deleted. Fix me eventually
 
+    )
+    
+    last_notice = models.DateField(
+        verbose_name=_('Last Overdue Notice Send Date'),
+        blank=True,
+        null=True,
+    )
+
+    notices_sent = models.IntegerField(
+        default=0,
     )
 
     @transaction.atomic
