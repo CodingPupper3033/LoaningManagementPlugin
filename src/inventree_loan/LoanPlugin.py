@@ -15,6 +15,8 @@ from stock.models import StockItem
 from plugin.mixins import AppMixin, NavigationMixin, SettingsMixin, UrlsMixin, ActionMixin, PanelMixin, ScheduleMixin
 from stock.views import StockItemDetail
 from .models import LoanSession
+from users.serializers import RoleSerializer
+from users.models import check_user_role
 
 from datetime import date
 
@@ -88,6 +90,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
         },
     }
     
+        
     # Get user lookup api, if it exists
     @property
     def userlookup_api_url(self):
@@ -99,6 +102,21 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
     # Custom Panels
     STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
     
+    def get_panel_context(self, view, request, context):
+        """Returns enriched context."""
+        ctx = super().get_panel_context(view, request, context)
+
+        logger.debug(ctx['item'].pk)
+        # If we are looking at a StockLocationDetail view, add location context object
+        #if isinstance(view, StockLocationDetail):
+        #ctx['roles'] = request.user.get_roles()
+        ctx['perm'] = check_user_role(request.user,self.ROLE,"view")
+        if isinstance(view, StockItemDetail):
+            sessions = LoanSession.objects.filter(stock=ctx['item'].pk,returned=False)
+            ctx['stock_loaned'] = len(sessions)
+
+        return ctx
+
     def get_custom_panels(self, view, request):
         panels = []
 

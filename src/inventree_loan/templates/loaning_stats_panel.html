@@ -5,6 +5,7 @@
 
     <!--Cannot add a button in the panel header as a panelmixin! The HTML here is within the
               panel-content div. Therefore, add the button just below. Maybe can be done with javascript?-->
+    {% if perm %}
     <div>
         <div class='d-flex flex-wrap'>
             {% include "spacer.html" %}
@@ -19,6 +20,9 @@
     {% include "filter_list.html" with id="user" %}
 </div>
 <table class='table table-condensed table-striped' data-toolbar='#user-button-toolbar' id='stockitem-table'></table>
+    {% else %}
+<h5 id='loan-avail'>Placeholder</h5>
+    {% endif %}
 
 <script>
 </script>

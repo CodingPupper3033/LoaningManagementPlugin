@@ -1238,6 +1238,7 @@ function getReturnButton(pk) {
 
 {% if item %} // probably a better way to do this... `item` exists on stock pages and not loan pages.
               // use this to differentiate which page this script is loaded on.
+  {% if perm %}
     $(document).ready(function(){
         loadLoanTable($('#stockitem-table'),{
                 params: {
@@ -1254,6 +1255,13 @@ function getReturnButton(pk) {
             createNewLoanSession({table:'#stockitem-table'},{stock:'{{ item.pk }}'});
         });
     });
+  {% else %}
+    {% if stock_loaned %}
+        $('#loan-avail').text("This item is currently unavailable to loan");
+    {% else %}
+        $('#loan-avail').text("This item is available to loan");
+    {% endif %}
+  {% endif %}
 
 {% endif %}
 
