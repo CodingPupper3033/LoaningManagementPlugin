@@ -83,8 +83,8 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
         'check_late' : {
             'func' : 'check_late',
             'schedule' : 'D',
-            'schedule' : 'I',
-            'minutes' : 10,
+#            'schedule' : 'I',
+#            'minutes' : 10,
         },
     }
     
@@ -132,6 +132,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
 
 
     def check_late(self,*args,**kwargs):
+        send_email("Testing email transmit","Server is able to send e-mail!",["wiltk2@rpi.edu"])
         if not self.get_setting('ENABLE_OVERDUE_EMAIL'):
             return False 
         overdue_list = LoanSession.objects.filter(LoanSession.OVERDUE_FILTER)
