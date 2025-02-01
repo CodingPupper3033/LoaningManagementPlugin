@@ -1256,10 +1256,12 @@ function getReturnButton(pk) {
         });
     });
   {% else %}
-    {% if stock_loaned %}
-        $('#loan-avail').text("This item is currently unavailable to loan");
-    {% else %}
+    {% if stock_labonly %}
+        $('#loan-avail').text("This item is designated for lab use only and is not permitted to be loaned");
+    {% elif stock_avail %}
         $('#loan-avail').text("This item is available to loan");
+    {% else %}
+        $('#loan-avail').text("This item is currently unavailable to loan");
     {% endif %}
   {% endif %}
 

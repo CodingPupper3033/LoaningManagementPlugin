@@ -2,7 +2,7 @@ import datetime
 
 from rest_framework import serializers
 
-from .LoanPlugin import LoanPlugin
+from .LoanPlugin import LoanPlugin,is_stock_labonly
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 
@@ -94,6 +94,8 @@ class LoanSessionSerializer(serializers.ModelSerializer):
         from .models import LoanSession
         if LoanSession.objects.filter(stock=value, returned=False).exists():
             raise serializers.ValidationError("Stock item is already loaned out")
+        if is_stock_labonly(stockitem=value):
+            raise serializers.ValidationError("Selected item is designated Lab Only")
         return value
 
     class Meta:

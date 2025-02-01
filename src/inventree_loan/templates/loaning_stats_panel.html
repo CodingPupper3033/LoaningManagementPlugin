@@ -5,7 +5,9 @@
 
     <!--Cannot add a button in the panel header as a panelmixin! The HTML here is within the
               panel-content div. Therefore, add the button just below. Maybe can be done with javascript?-->
-    {% if perm %}
+    {% if stock_labonly %}
+        <h5 id='loan-labonly'>This item is designated for lab use only and is not permitted to be loaned</h5>
+    {% elif perm %}
     <div>
         <div class='d-flex flex-wrap'>
             {% include "spacer.html" %}

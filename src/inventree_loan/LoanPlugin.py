@@ -12,8 +12,10 @@ from django.views.generic import RedirectView
 from InvenTree.email import send_email
 from plugin import InvenTreePlugin
 from stock.models import StockItem
+from part.models import Part
 from plugin.mixins import AppMixin, NavigationMixin, SettingsMixin, UrlsMixin, ActionMixin, PanelMixin, ScheduleMixin
 from stock.views import StockItemDetail
+from part.views import PartDetail
 from .models import LoanSession
 from users.serializers import RoleSerializer
 from users.models import check_user_role
@@ -59,6 +61,11 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                 MinValueValidator(0)
             ]
         },
+        'UNLOANABLE_SUFFIX': {
+            'name': _('Unloanable serial Suffix'),
+            'description': _("Optional added suffix to a stock item which renders the part unloanable"),
+            'default': "",
+        },
         'USER_LOOKUP_API': {
             'name': _('User Lookup API URL'),
             'description': _("Internal API for loan user lookup. This is expected to be provided by a corresponding plugin. Alternatively, this plugin could be modified to use the APICallMixin to directly interface with an external server."),
@@ -99,22 +106,24 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
         #return False
         return "{}".format(self.get_setting("USER_LOOKUP_API"))
 
+    @property
+    def unloanable_suffix(self):
+        return self.get_setting("UNLOANABLE_SUFFIX")
+
     # Custom Panels
     STOCK_ITEM_LOAN_PANEL_TITLE = "Loaning"
+
     
     def get_panel_context(self, view, request, context):
         """Returns enriched context."""
         ctx = super().get_panel_context(view, request, context)
 
-        logger.debug(ctx['item'].pk)
-        # If we are looking at a StockLocationDetail view, add location context object
-        #if isinstance(view, StockLocationDetail):
-        #ctx['roles'] = request.user.get_roles()
         ctx['perm'] = check_user_role(request.user,self.ROLE,"view")
         if isinstance(view, StockItemDetail):
-            sessions = LoanSession.objects.filter(stock=ctx['item'].pk,returned=False)
-            ctx['stock_loaned'] = len(sessions)
-
+             ctx['stock_labonly'] = is_stock_labonly(stock_pk=ctx['item'].pk)
+             ctx['stock_avail'] = is_stock_available(stock_pk=ctx['item'].pk)
+        if isinstance(view, PartDetail):
+            (ctx['part_avail'],ctx['part_loaned'],ctx['part_labonly']) = get_part_availability(part_pk=ctx['part'].pk)
         return ctx
 
     def get_custom_panels(self, view, request):
@@ -130,6 +139,14 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                 "javascript_template": "js/loan.js",
                 "role": LoanPlugin.ROLE,
                 "badge_api":LoanPlugin.userlookup_api_url,
+            })
+        if isinstance(view, PartDetail):
+            panels.append({
+                "title": LoanPlugin.STOCK_ITEM_LOAN_PANEL_TITLE,
+                "icon": "fas fa-handshake",
+                "content_template": "part_loan_panel.html",
+                "javascript_template": "",
+                "role": LoanPlugin.ROLE,
             })
 
         return panels
@@ -171,3 +188,61 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                 )
                     
         return len(overdue_list)
+
+# Additional functions
+def is_stock_labonly(stockitem="",stock_pk=""):
+    # Check to see if labonly designation exists
+    if not LoanPlugin().unloanable_suffix: # I feel like this is a bad way to get the unloanable_suffix, but can't think of a better way
+        return False
+    # Get stockitem if given pk
+    if not stockitem:
+        stockitem = StockItem.objects.filter(pk=stock_pk)
+        if not stockitem:
+            return False
+        stockitem = stockitem[0]
+    # Check if item is marked Lab Only
+    if stockitem.serial.endswith(LoanPlugin().unloanable_suffix):
+        return True
+    # Item exists and is not lab only
+    return False
+
+def is_stock_available(stockitem="",stock_pk=""):
+    # Check if stock item actually exists
+    if not stockitem:
+        if not StockItem.objects.filter(pk=stock_pk):
+            return False
+    else:
+        stock_pk = stockitem.pk
+    # Check to see if it is currently loaned
+    if LoanSession.objects.filter(stock=stock_pk,returned=False):
+        return False
+    # Item exists and isn't loaned
+    return True
+
+def get_part_availability(part="",part_pk=""):
+    """ Returns a tuple of part availability, containing:
+        1. Number of parts available to loan
+        2. Number of parts currently on loan
+        3. Number of parts designated lab only
+    """
+    # Get part if given pk
+    if not part:
+        part = Part.objects.filter(pk=part_pk)
+        if not part:
+            return False
+        part = part[0]
+    # Get list of stock for part
+    partstock = part.stock_entries()
+    # tracking numbers
+    Navail = len(partstock) # Assume all parts are available to loan to start
+    Nloaned = 0 # Assume none are loaned to start
+    Nlabonly = 0 # Assume none are lab only to start
+    # Loop through each stock item
+    for stock in partstock:
+        if is_stock_labonly(stockitem=stock):
+            Nlabonly += 1
+            Navail -= 1
+        elif not is_stock_available(stockitem=stock):
+            Navail -= 1
+            Nloaned += 1
+    return (Navail,Nloaned,Nlabonly)
