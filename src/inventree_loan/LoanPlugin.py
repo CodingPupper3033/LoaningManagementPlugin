@@ -21,11 +21,12 @@ from users.serializers import RoleSerializer
 from users.models import check_user_role
 
 from datetime import date
+from string import Template
 
 
 logger = logging.getLogger('inventree')
 
-class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixin, PanelMixin, ScheduleMixin, InvenTreePlugin):
+class LoanPlugin(ScheduleMixin, ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixin, PanelMixin, InvenTreePlugin):
     """Main plugin class for loaning capabilities."""
 
     # Plugin Metadata
@@ -33,7 +34,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
     SLUG = "loan"
     TITLE = "Loan Management"
     DESCRIPTION = "A plugin to manage loaning and tracking stock items."
-    VERSION = "2025-01-31-emailbeta"
+    VERSION = "2025.04.18.emailbeta"
     AUTHOR = "Joshua Miller, Kyle Wilt @ RPI"
     ROLE = "sales_order"
 
@@ -86,6 +87,21 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                 MinValueValidator(1)
             ],
         },
+        'OVERDUE_EMAIL_SUBJECT': {
+            'name': _('Subject Line for Overdue Email Notices'),
+            'description': _('Format as a python Template string. See plugin documentation for possible template valutes'),
+            'default': ""
+        },
+        'OVERDUE_EMAIL_BODY': {
+            'name': _('Body for Overdue Email Notices'),
+            'description': _('Format as a python Template string. See plugin documentation for possible template valutes'),
+            'default': ""
+        },
+        'OVERDUE_EMAIL_CC': {
+            'name': _('CCed email for Overdue Email Notices'),
+            'description': _('Enter an e-mail address to CC to'),
+            'default': ""
+        },
     }
 
     SCHEDULED_TASKS = {
@@ -127,6 +143,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
         return ctx
 
     def get_custom_panels(self, view, request):
+        logger.debug("TEST TEST TEST TEST")
         panels = []
 
         # Stock Item Loaning information panel
@@ -167,7 +184,7 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
 
 
     def check_late(self,*args,**kwargs):
-        send_email("Testing email transmit","Server is able to send e-mail!",["wiltk2@rpi.edu"])
+        #send_email("Testing email transmit","Server is able to send e-mail abc",["wiltk2@rpi.edu"])
         if not self.get_setting('ENABLE_OVERDUE_EMAIL'):
             return False 
         overdue_list = LoanSession.objects.filter(LoanSession.OVERDUE_FILTER)
@@ -179,15 +196,35 @@ class LoanPlugin(ActionMixin, AppMixin, SettingsMixin, UrlsMixin, NavigationMixi
                     send_notice = False
             if send_notice == True:
                 oloan.notices_sent += 1
+                subject_line = interpret_email_string(self.get_setting('OVERDUE_EMAIL_SUBJECT'),oloan)
+                body = interpret_email_string(self.get_setting('OVERDUE_EMAIL_BODY'),oloan)
+                recipient_list = [oloan.loan_user.email]
+                if(self.get_setting('OVERDUE_EMAIL_CC')):
+                    recipient_list.append(self.get_setting('OVERDUE_EMAIL_CC'))
                 oloan.last_notice = date.today()
                 oloan.save()
                 send_email(
-                    'ECSE Stockroom/Mercer XLab Overdue Loan Notice. Notice Number: {}'.format(oloan.notices_sent),
-                    'Hello, \n You are receiving this e-mail because our records indicate that you have an overdue loan for hardware lent through either the Mercer XLab or the ECSE Stockroom. There hardware is as follows:\n\nItem: {}\nSerial Number: {}\nDate Loaned: {}\nDue Date: {}\n\nPlease return these items in a timely manner. You may return them to Chris Rinaldi (JEC6009) or the Mercer XLab Entry Desk (JEC 6th Floor).\n\nSend to: {}'.format(oloan.stock.part.full_name,oloan.stock.serial,oloan.loan_date,oloan.due_date,oloan.loan_user.email),
-                    ['wiltk2@rpi.edu']
+                    subject_line,
+                    body.encode('raw_unicode_escape').decode('unicode_escape'), # Needed to unescape tabs, line breaks, etc.
+                    recipient_list
                 )
-                    
+
         return len(overdue_list)
+
+def interpret_email_string(string,oloan):
+    s = Template(string)
+    return s.substitute({'part':oloan.stock.part.full_name,
+                  'serial':oloan.stock.serial,
+                  'loan_date':oloan.loan_date,
+                  'due_date':oloan.due_date,
+                  'email':oloan.loan_user.email,
+                  'full_name':oloan.loan_user.get_full_name(),
+                  'first_name':oloan.loan_user.first_name,
+                  'last_name':oloan.loan_user.last_name,
+                  'last_notice':oloan.last_notice,
+                  'notices_sent':oloan.notices_sent,
+    })
+        
 
 # Additional functions
 def is_stock_labonly(stockitem="",stock_pk=""):
