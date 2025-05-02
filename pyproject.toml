@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "inventree-loan"
-version = "2025.04.18"
+version = "2025.05.02"
 description = "Inventree Plugin to manage stock loaning"
 license = {text = "MIT license"}
 keywords = ["inventree", "inventree-plugin", "loan"]

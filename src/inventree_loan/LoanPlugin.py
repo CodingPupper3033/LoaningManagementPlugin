@@ -34,7 +34,7 @@ class LoanPlugin(ScheduleMixin, ActionMixin, AppMixin, SettingsMixin, UrlsMixin,
     SLUG = "loan"
     TITLE = "Loan Management"
     DESCRIPTION = "A plugin to manage loaning and tracking stock items."
-    VERSION = "2025.04.18.emailbeta"
+    VERSION = "2025.05.02.emailbeta"
     AUTHOR = "Joshua Miller, Kyle Wilt @ RPI"
     ROLE = "sales_order"
 
@@ -180,8 +180,6 @@ class LoanPlugin(ScheduleMixin, ActionMixin, AppMixin, SettingsMixin, UrlsMixin,
             re_path(r'^tracking/', LoanTrackingDetail.as_view(), name='tracking'),
             re_path(r'^', LoanTrackingDetail.as_view(), name='tracking')
         ]
-
-
 
     def check_late(self,*args,**kwargs):
         #send_email("Testing email transmit","Server is able to send e-mail abc",["wiltk2@rpi.edu"])
