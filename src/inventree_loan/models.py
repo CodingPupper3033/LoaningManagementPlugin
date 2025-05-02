@@ -25,17 +25,24 @@ class LoanSession(models.Model):
         """Return the very end of yesterday. This allows for a loan to not be considered overdue on the day it is due."""
         return datetime.date.today() + datetime.timedelta(milliseconds=-1)
 
+    @staticmethod
+    def get_today():
+        """Return today"""
+        return datetime.date.today()
+
 
     # Sessions that have not been returned and are past their due date.
     OVERDUE_FILTER = Q(
         returned=False,
-        due_date__lt=get_end_of_day()
+        #due_date__lt=get_end_of_day()
+        due_date__lt=get_today()
     )
 
     # Sessions that have not been returned and are not past their due date.
     CURRENT_FILTER = Q(
         returned=False,
-        due_date__gte=get_end_of_day(),
+        #due_date__gte=get_end_of_day(),
+        due_date__gte=get_today(),
         #loan_date__lte=get_end_of_day()
     )
 
