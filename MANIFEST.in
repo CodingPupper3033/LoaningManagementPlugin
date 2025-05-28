@@ -1,0 +1,2 @@
+recursive-include src/inventree_loan/templates *
+recursive-include src/inventree_loan/static *
